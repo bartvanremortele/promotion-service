@@ -1,0 +1,27 @@
+{
+  "services": {
+    "name": "promotion",
+    "version": "v1",
+    "style": "RPC"
+  },
+  "models": {
+    "promotionModel": "./models/promotionModel"
+  },
+  "bus": {
+    "engines": {
+      "local": {
+        "handler": "./local"
+      },
+      "amqp": {
+        "handler": "./amqp",
+        "url": "amqp://bus"
+      }
+    },
+    "channels": {
+      "products": {
+        "name": "PROMOTIONS",
+        "engine": "amqp"
+      }
+    }
+  }
+}

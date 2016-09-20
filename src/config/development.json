@@ -1,0 +1,14 @@
+{
+  "logger": {
+    "level": "debug"
+  },
+  "services": {
+    "port": "3004"
+  },
+  "db": {
+    "host": "localhost",
+    "db": "micro",
+    "debug": true
+  }
+}
+

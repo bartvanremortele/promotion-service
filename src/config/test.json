@@ -1,0 +1,25 @@
+{
+  "logger": {
+    "level": "info",
+    "server": {
+      "response": "debug"
+    }
+  },
+  "db": {
+    "host": "mongo",
+    "db": "micro-test",
+    "debug": true
+  },
+  "gateway": {
+    "host": "gateway",
+    "port": "80",
+    "path": "/services"
+  },
+  "test": {
+    "defaultHeaders": {
+      "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21pY3JvYmFzZS5pbyIsInN1YiI6InVzZXIiLCJzY29wZSI6ImFwaSIsImp0aSI6ImZmYjVhOTQxLTQwYWMtNDBjNy1iMDNiLWIzZjdiMTdlOGRlMCIsImlhdCI6MTQ2NDYwNzU1MCwiZXhwIjoxNDk2MTQzNTUwfQ.kgFdYAGjwLC7wrY2gcm-8swDzwSCuEwLhgSx10rKZew"
+    }
+  }
+}
+
+

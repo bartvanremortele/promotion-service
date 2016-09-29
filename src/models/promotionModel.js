@@ -10,7 +10,11 @@ function modelFactory(base) {
         return shortId.generate();
       }
     },
-    title: { type: String, required: true }
+    title: { type: String, required: true },
+    class: { type: String, required: true },
+    active: { type: Boolean, required: true },
+    priority: { type: Number, required: true },
+    if: { type: base.db.Schema.Types.Mixed, required: true }
   }, { _id: false, minimize: false, timestamps: true });
 
   // Enable the virtuals when converting to JSON

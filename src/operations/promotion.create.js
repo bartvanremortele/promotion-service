@@ -7,18 +7,29 @@
  * @return {Function} The operation factory
  */
 function opFactory(base) {
+  const promotionsChannel = base.config.get('bus:channels:promotions:name');
   const op = {
-    name: 'promotion.create',
     // TODO: create the promotion JsonSchema
     handler: (msg, reply) => {
       const promotion = new base.db.models.Promotion({
-        title: msg.title
+        title: msg.title,
+        class: msg.class,
+        restrictions: msg.restrictions
       });
       promotion.save()
         .then(savedPromotion => {
           if (base.logger.isDebugEnabled()) {
             base.logger.debug(`[promotion] promotion ${savedPromotion._id} created`);
           }
+
+          base.bus.publish(`${promotionsChannel}.CREATE`,
+            {
+              new: savedPromotion.toObject({ virtuals: true }),
+              data: msg
+            }
+          );
+          console.log(savedPromotion);
+          console.log(savedPromotion.toClient());
           return (reply(base.utils.genericResponse({ promotion: savedPromotion.toClient() })));
         })
         .catch(error => reply(base.utils.genericResponse(null, error)));

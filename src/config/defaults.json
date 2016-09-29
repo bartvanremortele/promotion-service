@@ -7,6 +7,11 @@
   "models": {
     "promotionModel": "./models/promotionModel"
   },
+  "promotions": {
+    "classes": {
+      "default": "./classes/default"
+    }
+  },
   "bus": {
     "engines": {
       "local": {
@@ -18,7 +23,7 @@
       }
     },
     "channels": {
-      "products": {
+      "promotions": {
         "name": "PROMOTIONS",
         "engine": "amqp"
       }

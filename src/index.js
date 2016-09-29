@@ -4,6 +4,6 @@ const base = require('microbase')();
 require(base.config.get('models:promotionModel'))(base);
 
 // Add operations
-base.services.addOperation(require('./operations/createPromotion')(base));
+base.services.addOperationsFromFolder();
 
 module.exports = base;

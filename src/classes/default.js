@@ -207,9 +207,13 @@ function promotionFn(base) {
   };
 
   function evaluate(context, promoContext, level, op) {
-    base.logger.debug(indent(level), Object.keys(op)[0], JSON.stringify(op).substring(0, 200));
+    if (base.logger.isDebugEnabled()) {
+      base.logger.debug(indent(level), Object.keys(op)[0], JSON.stringify(op).substring(0, 160));
+    }
     const result = fns[Object.keys(op)[0]](context, promoContext, level, op);
-    base.logger.debug(indent(level), 'result:', JSON.stringify(result).substring(0, 200));
+    if (base.logger.isDebugEnabled()) {
+      base.logger.debug(indent(level), 'result:', JSON.stringify(result).substring(0, 160));
+    }
     return result;
   }
 
@@ -217,7 +221,6 @@ function promotionFn(base) {
 
     if (base.logger.isDebugEnabled()) {
       base.logger.debug(`[promotions] Firing '${context.promotion.id} [${context.promotion.class}] ${context.promotion.title}' promotion check`);
-      base.logger.debug(`[promotions] ${JSON.stringify(context.promotion.if, null, 2)}`);
     }
 
     const promoContext = {};
@@ -264,13 +267,12 @@ function promotionFn(base) {
     // console.log(JSON.stringify(result, null, 2));
     // console.log('*** This promo context');
     // console.log(JSON.stringify(promoContext, null, 2));
-    console.log('*** Cart context');
-    console.log(JSON.stringify(context.cartContext, null, 2));
-    console.log('*** Fulfilled promos');
-    console.log(JSON.stringify(context.fulfilledPromos, null, 2));
-    console.log('*** Almost fulfilled promos');
-    console.log(JSON.stringify(context.almostFulfilledPromos, null, 2));
-
+    // console.log('*** Cart context');
+    // console.log(JSON.stringify(context.cartContext, null, 2));
+    // console.log('*** Fulfilled promos');
+    // console.log(JSON.stringify(context.fulfilledPromos, null, 2));
+    // console.log('*** Almost fulfilled promos');
+    // console.log(JSON.stringify(context.almostFulfilledPromos, null, 2));
   };
 }
 

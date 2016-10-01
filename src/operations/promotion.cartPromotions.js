@@ -67,13 +67,10 @@ function opFactory(base) {
             });
         })
         .then(products => {
-          console.log(' ');
-          console.log(' ');
           const cartContext = {};
           const fulfilledPromos = [];
           const almostFulfilledPromos = [];
           promotions.forEach(promotion => {
-            console.log('======================================================');
             promotionClasses[promotion.class]({
               promotion,
               cart,
@@ -82,14 +79,13 @@ function opFactory(base) {
               fulfilledPromos,
               almostFulfilledPromos
               /* ,user */
-            })
-            ;
-            console.log('======================================================');
-            console.log(' ');
-            console.log(' ');
+            });
           });
-
-          reply(base.utils.genericResponse({ cart }));
+          reply(base.utils.genericResponse({
+            cart,
+            fulfilledPromos,
+            almostFulfilledPromos
+          }));
         })
         .catch(error => reply(base.utils.genericResponse(null, error)));
     }

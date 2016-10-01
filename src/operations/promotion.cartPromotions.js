@@ -42,7 +42,6 @@ function opFactory(base) {
   const op = {
     // TODO: create the promotion JsonSchema
     handler: (cart, reply) => {
-      loadPromotions();
       // List unique product IDs
       const productIds = [...new Set(cart.items.reduce((list, item) => {
         list.push(item.productId);

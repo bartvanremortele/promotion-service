@@ -55,10 +55,6 @@ function promotionFn(base) {
       // Is there enough quantity?
       if (pass) {
         const cartItemQuantityUsed = context.cartContext[item.id] ? context.cartContext[item.id] : 0;
-        // const cartItemContext = context.cartContext[item.id] = context.cartContext[item.id] || {
-        //     quantityUsed: 0,
-        //     promos: []
-        //   };
         const promoItemContext = promoContext[item.id] = promoContext[item.id] || {
             quantityUsed: 0,
             promos: []
@@ -257,7 +253,7 @@ function promotionFn(base) {
       });
     } else {
       // Promotion not fulfilled, only copy the data
-      if (result.data) {
+      if (result.data && result.data.length > 0) {
         context.almostFulfilledPromos.push({
           id: context.promotion.id,
           data: result.data

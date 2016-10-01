@@ -54,16 +54,17 @@ function promotionFn(base) {
       }
       // Is there enough quantity?
       if (pass) {
-        const cartItemContext = context.cartContext[item.id] = context.cartContext[item.id] || {
-            quantityUsed: 0,
-            promos: []
-          };
+        const cartItemQuantityUsed = context.cartContext[item.id] ? context.cartContext[item.id] : 0;
+        // const cartItemContext = context.cartContext[item.id] = context.cartContext[item.id] || {
+        //     quantityUsed: 0,
+        //     promos: []
+        //   };
         const promoItemContext = promoContext[item.id] = promoContext[item.id] || {
             quantityUsed: 0,
             promos: []
           };
         const quantityNeeded = promoQuantity - collectedQuantity;
-        const quantityAvailable = item.quantity - cartItemContext.quantityUsed - promoItemContext.quantityUsed;
+        const quantityAvailable = item.quantity - cartItemQuantityUsed - promoItemContext.quantityUsed;
         if (quantityAvailable > 0) {
           const quantityToUse = quantityAvailable > quantityNeeded
             ? quantityNeeded : quantityAvailable;
@@ -227,17 +228,25 @@ function promotionFn(base) {
 
       // Copy the promoContext to context.cartContext, to not allow product reuse
       Object.keys(promoContext).forEach(itemId => {
-        context.cartContext[itemId].quantityUsed += promoContext[itemId].quantityUsed;
-        Array.prototype.push.apply(context.cartContext[itemId].promos, promoContext[itemId].promos);
-    });
+        if (promoContext[itemId].quantityUsed > 0) {
+          const cartItemContext = context.cartContext[itemId] = context.cartContext[itemId]
+            || {
+              quantityUsed: 0,
+              promos: []
+            };
+          cartItemContext.quantityUsed += promoContext[itemId].quantityUsed;
+          Array.prototype.push
+            .apply(cartItemContext.promos, promoContext[itemId].promos);
+        }
+      });
 
-      // Copy the Promotion result to the cartContext to easy the access
+      // Copy the Promotion result to the fulfilledPromos to easy the access
       const items = [];
       Object.keys(promoContext).forEach(itemId => {
         items.push({
           itemId,
           quantityUsed: promoContext[itemId].quantityUsed
-        })
+        });
       });
       context.fulfilledPromos.push({
         id: context.promotion.id,
@@ -255,8 +264,8 @@ function promotionFn(base) {
     // console.log(JSON.stringify(result, null, 2));
     // console.log('*** This promo context');
     // console.log(JSON.stringify(promoContext, null, 2));
-    // console.log('*** Cart context');
-    // console.log(JSON.stringify(context.cartContext, null, 2));
+    console.log('*** Cart context');
+    console.log(JSON.stringify(context.cartContext, null, 2));
     console.log('*** Fulfilled promos');
     console.log(JSON.stringify(context.fulfilledPromos, null, 2));
     console.log('*** Almost fulfilled promos');

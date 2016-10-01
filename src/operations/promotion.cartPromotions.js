@@ -81,7 +81,6 @@ function opFactory(base) {
             });
           });
           reply(base.utils.genericResponse({
-            cart,
             fulfilledPromos,
             almostFulfilledPromos
           }));

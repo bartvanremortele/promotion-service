@@ -94,10 +94,10 @@ function promotionFn(base) {
         missingQuantity: promoQuantity - collectedQuantity,
         type: promoProduct ? 'PRODUCT' : 'CATEGORY',
         code: promoProduct ? promoProduct.id : promoCategory.id,
-        title: (promoProduct && context.products[promoProduct.id])
-          ? context.products[promoProduct.id].title : ''
+        items: collectedItems.map(({ itemId, quantityToUse }) => ({
+          itemId, quantityToUse
+        }))
       };
-      data.message = interpolate(promoProduct ? promoProduct.message : promoCategory.message, data);
       return {
         ok: false,
         data

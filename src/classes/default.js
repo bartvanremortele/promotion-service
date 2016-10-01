@@ -39,7 +39,7 @@ function promotionFn(base) {
   function productFn(context, promoContext, level, { product: promoProduct, category: promoCategory }) {
     // Search the product/category in the cart, counting against the threshold (quantity)
     let collectedQuantity = 0;
-    let promoQuantity = promoProduct ? promoProduct.quantity : promoCategory.quantity;
+    const promoQuantity = promoProduct ? promoProduct.quantity : promoCategory.quantity;
     const collectedItems = [];
     for (const item of context.cart.items) {
       // Is this a product the promotion wants?
@@ -257,10 +257,12 @@ function promotionFn(base) {
       });
     } else {
       // Promotion not fulfilled, only copy the data
-      context.almostFulfilledPromos.push({
-        id: context.promotion.id,
-        data: result.data
-      });
+      if (result.data) {
+        context.almostFulfilledPromos.push({
+          id: context.promotion.id,
+          data: result.data
+        });
+      }
     }
 
     // console.log('*** This promo result');

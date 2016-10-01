@@ -14,7 +14,9 @@ function opFactory(base) {
       const promotion = new base.db.models.Promotion({
         title: msg.title,
         class: msg.class,
-        restrictions: msg.restrictions
+        active: msg.active,
+        priority: msg.priority,
+        if: msg.if
       });
       promotion.save()
         .then(savedPromotion => {
@@ -28,8 +30,6 @@ function opFactory(base) {
               data: msg
             }
           );
-          console.log(savedPromotion);
-          console.log(savedPromotion.toClient());
           return (reply(base.utils.genericResponse({ promotion: savedPromotion.toClient() })));
         })
         .catch(error => reply(base.utils.genericResponse(null, error)));

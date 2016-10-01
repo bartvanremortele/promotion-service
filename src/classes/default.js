@@ -25,7 +25,7 @@ const moment = require('moment');
 function promotionFn(base) {
 
   function indent(level) {
-    return ' '.repeat(level * 2);
+    return ' |'.repeat(level);
   }
 
   function interpolate(s, props) {
@@ -220,7 +220,7 @@ function promotionFn(base) {
   return (context /* { result, promotion, cart, products, user } */) => {
 
     if (base.logger.isDebugEnabled()) {
-      base.logger.debug(`[promotions] Firing '${context.promotion.id} [${context.promotion.class}] ${context.promotion.title}' promotion check`);
+      base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check`);
     }
 
     const promoContext = {};

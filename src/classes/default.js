@@ -171,9 +171,16 @@ function promotionFn(base) {
   function anyFn(context, promoContext, level, { any: ops }) {
     const data = { any: [] };
     for (let op of ops) {
-      const result = evaluate(context, promoContext, level + 1, op);
+      const thisPromoContext = {};
+      Object.keys(promoContext).forEach(id => {
+        thisPromoContext[id] = promoContext[id];
+      });
+      const result = evaluate(context, thisPromoContext, level + 1, op);
       if (result.data) data.any.push(result.data);
       if (result.ok) {
+        Object.keys(thisPromoContext).forEach(id => {
+          promoContext[id] = thisPromoContext[id];
+        });
         return {
           ok: true
         };

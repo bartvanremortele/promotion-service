@@ -42,6 +42,7 @@ function opFactory(base) {
   const op = {
     // TODO: create the promotion JsonSchema
     handler: (cart, reply) => {
+      loadPromotions();
       // List unique product IDs
       const productIds = [...new Set(cart.items.reduce((list, item) => {
         list.push(item.productId);
@@ -56,7 +57,7 @@ function opFactory(base) {
               name: 'catalog:product.list'
             }, {
               id: productIds.join(','),
-              fields: 'categories'
+              fields: 'title,categories'
             })
             .then(productsList => {
               return productsList.data.reduce((result, item) => {
@@ -68,9 +69,21 @@ function opFactory(base) {
         .then(products => {
           console.log(' ');
           console.log(' ');
+          const cartContext = {};
+          const fulfilledPromos = [];
+          const almostFulfilledPromos = [];
           promotions.forEach(promotion => {
             console.log('======================================================');
-            promotionClasses[promotion.class]({ promotion, cart, products /* ,user */ });
+            promotionClasses[promotion.class]({
+              promotion,
+              cart,
+              products,
+              cartContext,
+              fulfilledPromos,
+              almostFulfilledPromos
+              /* ,user */
+            })
+            ;
             console.log('======================================================');
             console.log(' ');
             console.log(' ');

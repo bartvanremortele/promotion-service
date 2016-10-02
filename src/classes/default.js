@@ -22,10 +22,13 @@ const moment = require('moment');
 */
 // @formatter:on
 
+
 function promotionFn(base) {
 
+  const nli = '\n' + ' '.repeat(35);
+
   function indent(level) {
-    return ' |'.repeat(level);
+    return '  '.repeat(level);
   }
 
   function interpolate(s, props) {
@@ -216,7 +219,7 @@ function promotionFn(base) {
   return (context /* { result, promotion, cart, products, user } */) => {
 
     if (base.logger.isDebugEnabled()) {
-      base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check`);
+      base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check for cart [${context.cart.cartId}]`);
     }
 
     const promoContext = {};
@@ -258,6 +261,20 @@ function promotionFn(base) {
           id: context.promotion.id,
           data: result.data
         });
+      }
+    }
+    if (base.logger.isDebugEnabled()) {
+      if (context.fulfilledPromos.length > 0) {
+        base.logger.debug(
+          ' fulfilledPromos:',
+          JSON.stringify(context.fulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli)
+        );
+      }
+      if (context.almostFulfilledPromos.length > 0) {
+        base.logger.debug(
+          ' almostFulfilledPromos:',
+          JSON.stringify(context.almostFulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli)
+        );
       }
     }
 

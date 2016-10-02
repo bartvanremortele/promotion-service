@@ -256,13 +256,17 @@ function promotionFn(base) {
       });
     } else {
       // Promotion not fulfilled, only copy the data
-      if (result.data && result.data.length > 0) {
-        context.almostFulfilledPromos.push({
-          id: context.promotion.id,
-          data: result.data
-        });
+      if (result.data) {
+        if (!Array.isArray(result.data)) result.data = [result.data]
+        if (result.data.length > 0) {
+          context.almostFulfilledPromos.push({
+            id: context.promotion.id,
+            data: result.data
+          });
+        }
       }
     }
+
     if (base.logger.isDebugEnabled()) {
       if (context.fulfilledPromos.length > 0) {
         base.logger.debug(

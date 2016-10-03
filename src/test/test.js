@@ -152,7 +152,7 @@ describe('Calculate promotions', () => {
     cleanDB(done);
   });
 
-  it('3x2 fulfilled single item', done => {
+  it('3x2 fulfilled one item per product', done => {
     const productId = 'SksexGRPn4';
     const quantity = 3;
     let promoId;
@@ -182,7 +182,6 @@ describe('Calculate promotions', () => {
       })
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        base.logger.debug(JSON.stringify(response.result, null, 2));
 
         expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
 
@@ -200,7 +199,7 @@ describe('Calculate promotions', () => {
       });
   });
 
-  it('3x2 fulfilled multiple items', done => {
+  it('3x2 fulfilled two items per product', done => {
     const productId = 'SksexGRPn4';
     const quantity = 3;
     let promoId;
@@ -235,7 +234,6 @@ describe('Calculate promotions', () => {
       })
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        base.logger.debug(JSON.stringify(response.result, null, 2));
 
         expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
 
@@ -255,7 +253,7 @@ describe('Calculate promotions', () => {
       });
   });
 
-  it('3x2 almost fulfilled single item', done => {
+  it('3x2 almost fulfilled one item per product', done => {
     const productId = 'SksexGRPn4';
     const quantity = 3;
     let promoId;
@@ -285,7 +283,6 @@ describe('Calculate promotions', () => {
       })
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        base.logger.debug(JSON.stringify(response.result, null, 2));
 
         expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
 
@@ -293,16 +290,15 @@ describe('Calculate promotions', () => {
         expect(affps).to.be.an.array().and.to.have.length(1);
         const affp = affps[0];
         expect(affp.id).to.be.a.string().and.to.equal(promoId);
+        const data = affp.data[0];
+        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
+        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity);
+        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
+        expect(data.code).to.be.a.string().and.to.equal(productId);
 
-        expect(affp.data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
-        expect(affp.data.promoQuantity).to.be.a.number().and.to.equal(quantity);
-        expect(affp.data.missingQuantity).to.be.a.number().and.to.equal(1);
-        expect(affp.data.type).to.be.a.string().and.to.equal('PRODUCT');
-        expect(affp.data.code).to.be.a.string().and.to.equal(productId);
-
-        expect(affp.data.items).to.be.an.array().and.to.have.length(1);
-        expect(affp.data.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(affp.data.items[0].quantityToUse).to.be.a.number().and.to.equal(quantity - 1);
+        expect(data.items).to.be.an.array().and.to.have.length(1);
+        expect(data.items[0].itemId).to.be.a.string().and.to.equal('0');
+        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(quantity - 1);
 
         const ffps = response.result.fulfilledPromos;
         expect(ffps).to.be.an.array().and.to.have.length(0);
@@ -311,7 +307,7 @@ describe('Calculate promotions', () => {
       });
   });
 
-  it('3x2 almost fulfilled multiple item', done => {
+  it('3x2 almost fulfilled two items per product', done => {
     const productId = 'SksexGRPn4';
     const quantity = 3;
     let promoId;
@@ -346,7 +342,6 @@ describe('Calculate promotions', () => {
       })
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        base.logger.debug(JSON.stringify(response.result, null, 2));
 
         expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
 
@@ -355,17 +350,17 @@ describe('Calculate promotions', () => {
         const affp = affps[0];
         expect(affp.id).to.be.a.string().and.to.equal(promoId);
 
-        expect(affp.data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
-        expect(affp.data.promoQuantity).to.be.a.number().and.to.equal(quantity);
-        expect(affp.data.missingQuantity).to.be.a.number().and.to.equal(1);
-        expect(affp.data.type).to.be.a.string().and.to.equal('PRODUCT');
-        expect(affp.data.code).to.be.a.string().and.to.equal(productId);
+        const data = affp.data[0];
+        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
+        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity);
+        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
+        expect(data.code).to.be.a.string().and.to.equal(productId);
 
-        expect(affp.data.items).to.be.an.array().and.to.have.length(2);
-        expect(affp.data.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(affp.data.items[0].quantityToUse).to.be.a.number().and.to.equal(1);
-        expect(affp.data.items[1].itemId).to.be.a.string().and.to.equal('1');
-        expect(affp.data.items[1].quantityToUse).to.be.a.number().and.to.equal(1);
+        expect(data.items).to.be.an.array().and.to.have.length(2);
+        expect(data.items[0].itemId).to.be.a.string().and.to.equal('0');
+        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(1);
+        expect(data.items[1].itemId).to.be.a.string().and.to.equal('1');
+        expect(data.items[1].quantityToUse).to.be.a.number().and.to.equal(1);
 
         const ffps = response.result.fulfilledPromos;
         expect(ffps).to.be.an.array().and.to.have.length(0);
@@ -404,7 +399,6 @@ describe('Calculate promotions', () => {
       })
       .then(response => {
         expect(response.statusCode).to.equal(200);
-        base.logger.debug(JSON.stringify(response.result, null, 2));
 
         expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
 
@@ -415,5 +409,125 @@ describe('Calculate promotions', () => {
       });
   });
 
+  it('AND 3x2 fulfilled one item per product', done => {
+    const productId1 = 'SksexGRPn4';
+    const productId2 = 'By2ZWfAPnV';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    let promoId;
+    const promotion = {
+      if: {
+        and: [
+          { product: { id: productId1, quantity: quantity1 } },
+          { product: { id: productId2, quantity: quantity2 } }
+        ]
+      }
+    };
+    createPromotion(promotion)
+      .then(creationResponse => {
+        promoId = creationResponse.result.promotion.id;
+        const cart = {
+          items: [
+            { id: '0', productId: productId1, quantity: quantity1, price: 100.00 },
+            { id: '1', productId: productId2, quantity: quantity2, price: 100.00 }
+          ]
+        };
+        mockProductList(`${productId1},${productId2}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
 
+        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
+
+        const ffps = response.result.fulfilledPromos;
+        expect(ffps).to.be.an.array().and.to.have.length(1);
+        const ffp = ffps[0];
+        expect(ffp.id).to.be.a.string().and.to.equal(promoId);
+        expect(ffp.items).to.be.an.array().and.to.have.length(2);
+        expect(ffp.items[0].itemId).to.be.a.string().and.to.equal('0');
+        expect(ffp.items[0].quantityUsed).to.be.a.number().and.to.equal(quantity1);
+        expect(ffp.items[1].itemId).to.be.a.string().and.to.equal('1');
+        expect(ffp.items[1].quantityUsed).to.be.a.number().and.to.equal(quantity2);
+
+        const affps = response.result.almostFulfilledPromos;
+        expect(affps).to.be.an.array().and.to.have.length(0);
+        done();
+      });
+  });
+
+  it('AND 3x2 almostFulfilled one item per product', done => {
+    const productId1 = 'SksexGRPn4';
+    const productId2 = 'By2ZWfAPnV';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    let promoId;
+    const promotion = {
+      if: {
+        and: [
+          { product: { id: productId1, quantity: quantity1 } },
+          { product: { id: productId2, quantity: quantity2 } }
+        ]
+      }
+    };
+    createPromotion(promotion)
+      .then(creationResponse => {
+        promoId = creationResponse.result.promotion.id;
+        const cart = {
+          items: [
+            { id: '0', productId: productId1, quantity: quantity1, price: 100.00 },
+            { id: '1', productId: productId2, quantity: quantity2 - 1, price: 100.00 }
+          ]
+        };
+        mockProductList(`${productId1},${productId2}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => {
+        expect(response.statusCode).to.equal(200);
+
+        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
+
+        const affps = response.result.almostFulfilledPromos;
+        expect(affps).to.be.an.array().and.to.have.length(1);
+        const affp = affps[0];
+        expect(affp.id).to.be.a.string().and.to.equal(promoId);
+        const data = affp.data[0];
+        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity2 - 1);
+        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity2);
+        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
+        expect(data.code).to.be.a.string().and.to.equal(productId2);
+
+        expect(data.items).to.be.an.array().and.to.have.length(1);
+        expect(data.items[0].itemId).to.be.a.string().and.to.equal('1');
+        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(quantity2 - 1);
+
+        const ffps = response.result.fulfilledPromos;
+        expect(ffps).to.be.an.array().and.to.have.length(0);
+
+        done();
+      });
+  });
+
+  it('Test or', done => {
+    done();
+  });
+
+  it('Test nested or/and ', done => {
+    done();
+  });
+
+  it('Test nested or/and fulfilled', done => {
+    done();
+  });
+
+  it('Test nested or/and almost fulfilled the or', done => {
+    done();
+  });
+
+  it('Test nested or/and almost fulfilled the and', done => {
+    done();
+  });
+  it('Test nested or/and almost fulfilled both', done => {
+    done();
+  });
 });

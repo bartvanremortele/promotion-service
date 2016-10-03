@@ -2,8 +2,12 @@ function factory(/* base */) {
   return {
     name: 'userType',
     fn: (context, opContext, level, { userType: userType }, evaluator) => {
+      const result = context.user.type === userType;
       return {
-        ok: context.user.type === userType
+        ok,
+        data: {
+          value: result ? 1 : 0
+        }
       };
     }
   };

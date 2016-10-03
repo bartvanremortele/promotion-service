@@ -5,6 +5,7 @@ function factory(/* base */) {
       // Search the product/category in the cart, counting against the threshold (quantity)
       let collectedQuantity = 0;
       const promoQuantity = promoProduct ? promoProduct.quantity : promoCategory.quantity;
+      let threshold = promoProduct ? promoProduct.threshold : promoCategory.threshold;
       const collectedItems = [];
       for (const item of context.cart.items) {
         // Is this a product the promotion wants?
@@ -35,8 +36,13 @@ function factory(/* base */) {
           if (collectedQuantity === promoQuantity) break;
         }
       }
+      // Calculate value
+      const value = collectedQuantity === 0 ? 0.00 : collectedQuantity / promoQuantity;
+      if (!threshold) threshold = collectedQuantity === 0 ? 1 : (promoQuantity - 1) / promoQuantity;
+
       // Store the results
-      if (collectedQuantity === promoQuantity) {
+      if (value === 1) {
+        // Condition fulfilled
         collectedItems.forEach(collectedItem => {
           const promoItemContext = opContext[collectedItem.itemId];
           promoItemContext.promos.push({
@@ -48,10 +54,13 @@ function factory(/* base */) {
         return {
           ok: true
         };
-      } else if (promoQuantity - collectedQuantity === 1) {
+      } else if (value >= threshold) {
+        // Condition almost fulfilled
         const data = {
           collectedQuantity,
           promoQuantity,
+          threshold,
+          value,
           type: promoProduct ? 'PRODUCT' : 'CATEGORY',
           code: promoProduct ? promoProduct.id : promoCategory.id,
           items: collectedItems.map(({ itemId, quantityToUse }) => ({
@@ -63,6 +72,7 @@ function factory(/* base */) {
           data
         };
       }
+      // Condition not fulfilled
       return {
         ok: false
       };

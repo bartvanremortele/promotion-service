@@ -5,8 +5,12 @@ function factory(/* base */) {
     name: 'period',
     fn: (context, opContext, level, { period: { from, until } }, evaluator) => {
       const now = moment();
+      const ok = now.isAfter(from) && now.isBefore(until);
       return {
-        ok: now.isAfter(from) && now.isBefore(until)
+        ok,
+        data: {
+          value: ok ? 1 : 0
+        }
       };
     }
   };

@@ -22,13 +22,11 @@
 // @formatter:on
 
 function promotionFn(base) {
-
   const evaluator = new base.utils.Evaluator().use('promotions:default:operations');
 
   const nli = '\n' + ' '.repeat(35);
 
   return (context /* { result, promotion, cart, products, user } */) => {
-
     if (base.logger.isDebugEnabled()) {
       base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check for cart [${context.cart.cartId}]`);
     }
@@ -68,7 +66,7 @@ function promotionFn(base) {
     } else {
       // Promotion not fulfilled, only copy the data
       if (result.data) {
-        if (!Array.isArray(result.data)) result.data = [result.data]
+        if (!Array.isArray(result.data)) result.data = [result.data];
         if (result.data.length > 0) {
           context.almostFulfilledPromos.push({
             id: context.promotion.id,

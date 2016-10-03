@@ -17,7 +17,7 @@ function opFactory(base) {
       .exec()
       .then(loadedPromotions => {
         promotions = loadedPromotions;
-        if (base.logger.isDebugEnabled()) base.logger.debug('[Promotions] promotions loaded');
+        if (base.logger.isDebugEnabled()) base.logger.debug('[promotions] promotions loaded');
       })
       .catch(error => {
         base.logger.error('[promotions]', error);
@@ -42,9 +42,7 @@ function opFactory(base) {
   const op = {
     // TODO: create the promotion JsonSchema
     handler: (cart, reply) => {
-      if (base.logger.isDebugEnabled()) {
-        loadPromotions();
-      }
+      if (base.logger.isDebugEnabled()) loadPromotions();
       // List unique product IDs
       const productIds = [...new Set(cart.items.reduce((list, item) => {
         list.push(item.productId);

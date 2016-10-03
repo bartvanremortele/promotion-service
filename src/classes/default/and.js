@@ -1,40 +1,42 @@
 function factory(/* base */) {
   return {
     name: 'and',
-    fn: (context, opContext, level, { and: ops }, evaluator) => {
+    fn: (context, opContext, level, { and: ops, threshold: threshold = 0 }, evaluator) => {
       const thisOpContext = {};
       Object.keys(opContext).forEach(id => {
         thisOpContext[id] = opContext[id];
       });
       const data = { and: [] };
-      let lastData;
       let trues = 0;
+      let value = 0;
       // Evaluate all the operands to get the messages
       for (let op of ops) {
         const result = evaluator.evaluate(context, thisOpContext, level + 1, op);
-        if (result.data) data.and.push(result.data);
-        if (result.ok) {
-          trues += 1;
-        } else {
-          lastData = result.data;
+        if (result.ok) trues += 1;
+        if (result.data) {
+          data.and.push(result.data);
+          value += result.data.value;
         }
       }
+      value = value / ops.length;
+      data.value = value;
+
       if (trues === ops.length) {
-        // All operands returned true, return true
+        // All operands returned true, condition fulfilled
         Object.keys(thisOpContext).forEach(id => {
           opContext[id] = thisOpContext[id];
         });
         return {
           ok: true
         };
-      } else if (trues === ops.length - 1) {
-        // Only one operand returned false, return false with the message
+      } else if (value >= threshold && data.and.length + trues === ops.length) {
+        // Condition almost fullfilled
         return {
           ok: false,
-          data: lastData
+          data
         };
       } else {
-        // More than one operand returned false, return false
+        // Condition not fulfilled
         return {
           ok: false
         };

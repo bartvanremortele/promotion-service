@@ -1,4 +1,3 @@
-const moment = require('moment');
 
 // @formatter:off
 /*
@@ -22,199 +21,11 @@ const moment = require('moment');
 */
 // @formatter:on
 
-
 function promotionFn(base) {
 
+  const evaluator = new base.utils.Evaluator().use('promotions:default:operations');
+
   const nli = '\n' + ' '.repeat(35);
-
-  function indent(level) {
-    return '  '.repeat(level);
-  }
-
-  function interpolate(s, props) {
-    return s.replace(/\$\{(\w+)\}/g, function (match, expr) {
-      return props[expr];
-    });
-  }
-
-  /* Business */
-
-  function productFn(context, promoContext, level, { product: promoProduct, category: promoCategory }) {
-    // Search the product/category in the cart, counting against the threshold (quantity)
-    let collectedQuantity = 0;
-    const promoQuantity = promoProduct ? promoProduct.quantity : promoCategory.quantity;
-    const collectedItems = [];
-    for (const item of context.cart.items) {
-      // Is this a product the promotion wants?
-      let pass = false;
-      if (promoProduct && promoProduct.id === item.productId) {
-        pass = true;
-      }
-      if (promoCategory &&
-        context.products[item.productId]
-          .categories.indexOf(promoCategory.id) !== -1) {
-        pass = true;
-      }
-      // Is there enough quantity?
-      if (pass) {
-        const cartItemQuantityUsed = context.cartContext[item.id] ? context.cartContext[item.id] : 0;
-        const promoItemContext = promoContext[item.id] = promoContext[item.id] || {
-            quantityUsed: 0,
-            promos: []
-          };
-        const quantityNeeded = promoQuantity - collectedQuantity;
-        const quantityAvailable = item.quantity - cartItemQuantityUsed - promoItemContext.quantityUsed;
-        if (quantityAvailable > 0) {
-          const quantityToUse = quantityAvailable > quantityNeeded
-            ? quantityNeeded : quantityAvailable;
-          collectedQuantity += quantityToUse;
-          collectedItems.push({ promoId: context.promotion.id, itemId: item.id, quantityToUse });
-        }
-        if (collectedQuantity === promoQuantity) break;
-      }
-    }
-    // Store the results
-    if (collectedQuantity === promoQuantity) {
-      collectedItems.forEach(collectedItem => {
-        const promoItemContext = promoContext[collectedItem.itemId];
-        promoItemContext.promos.push({
-          promotion: context.promotion.id,
-          quantityToUse: collectedItem.quantityToUse
-        });
-        promoItemContext.quantityUsed += collectedItem.quantityToUse;
-      });
-      return {
-        ok: true
-      };
-    } else if (promoQuantity - collectedQuantity === 1) {
-      const data = {
-        collectedQuantity,
-        promoQuantity,
-        missingQuantity: promoQuantity - collectedQuantity,
-        type: promoProduct ? 'PRODUCT' : 'CATEGORY',
-        code: promoProduct ? promoProduct.id : promoCategory.id,
-        items: collectedItems.map(({ itemId, quantityToUse }) => ({
-          itemId, quantityToUse
-        }))
-      };
-      return {
-        ok: false,
-        data
-      };
-    }
-    return {
-      ok: false
-    };
-  }
-
-  function subtotalFn(context, promoContext, level, { subtotal_gte: threshold }) {
-    return {
-      ok: true
-    };
-  }
-
-  function periodFn(context, promoContext, level, { period: { from, until } }) {
-    const now = moment();
-    return {
-      ok: now.isAfter(from) && now.isBefore(until)
-    };
-  }
-
-  function userTypeFn(context, level, { userType: userType }) {
-    return {
-      ok: context.user.type === userType
-    };
-  }
-
-  /* Logical */
-
-  function andFn(context, promoContext, level, { and: ops }) {
-    const thisPromoContext = {};
-    Object.keys(promoContext).forEach(id => {
-      thisPromoContext[id] = promoContext[id];
-    });
-    const data = { and: [] };
-    let lastData;
-    let trues = 0;
-    // Evaluate all the operands to get the messages
-    for (let op of ops) {
-      const result = evaluate(context, thisPromoContext, level + 1, op);
-      if (result.data) data.and.push(result.data);
-      if (result.ok) {
-        trues += 1;
-      } else {
-        lastData = result.data;
-      }
-    }
-    if (trues === ops.length) {
-      // All operands returned true, return true
-      Object.keys(thisPromoContext).forEach(id => {
-        promoContext[id] = thisPromoContext[id];
-      });
-      return {
-        ok: true
-      };
-    } else if (trues === ops.length - 1) {
-      // Only one operand returned false, return false with the message
-      return {
-        ok: false,
-        data: lastData
-      };
-    } else {
-      // More than one operand returned false, return false
-      return {
-        ok: false
-      };
-    }
-  }
-
-  function anyFn(context, promoContext, level, { any: ops }) {
-    const data = { any: [] };
-    for (let op of ops) {
-      const thisPromoContext = {};
-      Object.keys(promoContext).forEach(id => {
-        thisPromoContext[id] = promoContext[id];
-      });
-      const result = evaluate(context, thisPromoContext, level + 1, op);
-      if (result.data) data.any.push(result.data);
-      if (result.ok) {
-        Object.keys(thisPromoContext).forEach(id => {
-          promoContext[id] = thisPromoContext[id];
-        });
-        return {
-          ok: true
-        };
-      }
-    }
-    return {
-      ok: false,
-      data: data.any
-    };
-  }
-
-  /* Control */
-
-  const fns = {
-    and: andFn,
-    any: anyFn,
-    product: productFn,
-    category: productFn,
-    collection: productFn,
-    subtotal_gte: subtotalFn,
-    period: periodFn,
-    userType: userTypeFn
-  };
-
-  function evaluate(context, promoContext, level, op) {
-    if (base.logger.isDebugEnabled()) {
-      base.logger.debug(indent(level), Object.keys(op)[0], JSON.stringify(op).substring(0, 160));
-    }
-    const result = fns[Object.keys(op)[0]](context, promoContext, level, op);
-    if (base.logger.isDebugEnabled()) {
-      base.logger.debug(indent(level), 'result:', JSON.stringify(result).substring(0, 160));
-    }
-    return result;
-  }
 
   return (context /* { result, promotion, cart, products, user } */) => {
 
@@ -222,32 +33,32 @@ function promotionFn(base) {
       base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check for cart [${context.cart.cartId}]`);
     }
 
-    const promoContext = {};
-    const result = evaluate(context, promoContext, 0, context.promotion.if);
+    const opContext = {};
+    const result = evaluator.evaluate(context, opContext, 0, context.promotion.if);
 
     if (result.ok) {
       // Promotion condition fulfilled!
 
       // Copy the promoContext to context.cartContext, to not allow product reuse
-      Object.keys(promoContext).forEach(itemId => {
-        if (promoContext[itemId].quantityUsed > 0) {
+      Object.keys(opContext).forEach(itemId => {
+        if (opContext[itemId].quantityUsed > 0) {
           const cartItemContext = context.cartContext[itemId] = context.cartContext[itemId]
             || {
               quantityUsed: 0,
               promos: []
             };
-          cartItemContext.quantityUsed += promoContext[itemId].quantityUsed;
+          cartItemContext.quantityUsed += opContext[itemId].quantityUsed;
           Array.prototype.push
-            .apply(cartItemContext.promos, promoContext[itemId].promos);
+            .apply(cartItemContext.promos, opContext[itemId].promos);
         }
       });
 
       // Copy the Promotion result to the fulfilledPromos to easy the access
       const items = [];
-      Object.keys(promoContext).forEach(itemId => {
+      Object.keys(opContext).forEach(itemId => {
         items.push({
           itemId,
-          quantityUsed: promoContext[itemId].quantityUsed
+          quantityUsed: opContext[itemId].quantityUsed
         });
       });
       context.fulfilledPromos.push({

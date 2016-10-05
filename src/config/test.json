@@ -5,6 +5,9 @@
       "response": "debug"
     }
   },
+  "services": {
+    "port": "5050"
+  },
   "db": {
     "host": "mongo",
     "db": "micro-test",
@@ -21,6 +24,11 @@
     }
   },
   "bus": {
+    "engines": {
+      "amqp": {
+        "handler": "./local"
+      }
+    },
     "channels": {
       "promotions": {
         "name": "PROMOTIONS",

@@ -71,15 +71,21 @@ function opFactory(base) {
           const fulfilledPromos = [];
           const almostFulfilledPromos = [];
           promotions.forEach(promotion => {
-            promotionClasses[promotion.class]({
-              promotion,
-              cart,
-              products,
-              cartContext,
-              fulfilledPromos,
-              almostFulfilledPromos
-              /* ,user */
-            });
+            let last = 0;
+            let previous = 0;
+            do {
+              previous = last;
+              promotionClasses[promotion.class]({
+                promotion,
+                cart,
+                products,
+                cartContext,
+                fulfilledPromos,
+                almostFulfilledPromos
+                /* ,user */
+              });
+              last = fulfilledPromos.length;
+            } while (last > previous);
           });
           reply(base.utils.genericResponse({
             fulfilledPromos,

@@ -24,7 +24,10 @@
 function promotionFn(base) {
   const evaluator = new base.utils.Evaluator().use('promotions:default:operations');
 
-  const nli = '\n' + ' '.repeat(35);
+  const nli = () => {
+    const now = new Date().toISOString();
+    return `\n${now} - \u001b[34mdebug\u001b[39m: [promotions] `;
+  }
 
   return (context /* { result, promotion, cart, products, user } */) => {
     if (base.logger.isDebugEnabled()) {
@@ -79,14 +82,14 @@ function promotionFn(base) {
     if (base.logger.isDebugEnabled()) {
       if (context.fulfilledPromos.length > 0) {
         base.logger.debug(
-          ' fulfilledPromos:',
-          JSON.stringify(context.fulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli)
+          '[promotions] fulfilledPromos:',
+          JSON.stringify(context.fulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli())
         );
       }
       if (context.almostFulfilledPromos.length > 0) {
         base.logger.debug(
-          ' almostFulfilledPromos:',
-          JSON.stringify(context.almostFulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli)
+          '[promotions] almostFulfilledPromos:',
+          JSON.stringify(context.almostFulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli())
         );
       }
     }
@@ -94,7 +97,7 @@ function promotionFn(base) {
     // console.log('*** This promo result');
     // console.log(JSON.stringify(result, null, 2));
     // console.log('*** This promo context');
-    // console.log(JSON.stringify(promoContext, null, 2));
+    // console.log(JSON.stringify(opContext, null, 2));
     // console.log('*** Cart context');
     // console.log(JSON.stringify(context.cartContext, null, 2));
     // console.log('*** Fulfilled promos');

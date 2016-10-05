@@ -98,18 +98,18 @@ function mockProductList(idsList, fields) {
 
 // Helper to validate responses
 function checkResponse(response, data, done) {
+  if (!data.ok) data.ok = true;
+
+  if (!data.fulfilledPromos) data.fulfilledPromos = [];
+  if (!data.almostFulfilledPromos) data.almostFulfilledPromos = [];
+
   expect(response.statusCode).to.equal(200);
-  expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
+
   expect(response.result.fulfilledPromos).to.be.an.array();
   expect(response.result.almostFulfilledPromos).to.be.an.array();
-  console.log(response.result);
-  if (response.result.fulfilledPromos.length > 0) {
-    expect(response.result.fulfilledPromos).to.equal(data);
-    expect(response.result.almostFulfilledPromos).to.be.an.array().and.to.have.length(0);
-  } else {
-    expect(response.result.almostFulfilledPromos).to.equal(data);
-    expect(response.result.fulfilledPromos).to.be.an.array().and.to.have.length(0);
-  }
+
+  expect(response.result).to.equal(data);
+
   if (done) done();
 }
 
@@ -180,12 +180,14 @@ describe('Calculate cart promotions', () => {
         { id: '0', productId, quantity }
       ]
     };
-    const expectedResponse = [
-      { items: [{ itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity }] }
-    ];
+    const expectedResponse = {
+      fulfilledPromos: [
+        { items: [{ itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity }] }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -207,17 +209,19 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        items: [
-          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-        ]
-      }
-    ];
+    const expectedResponse = {
+      fulfilledPromos: [
+        {
+          items: [
+            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+          ]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -238,24 +242,26 @@ describe('Calculate cart promotions', () => {
         { id: '0', productId, quantity: quantity - 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          collectedQuantity: cart.items[0].quantity,
-          promoQuantity: promotion.if.product.quantity,
-          threshold: cart.items[0].quantity / promotion.if.product.quantity,
-          value: cart.items[0].quantity / promotion.if.product.quantity,
-          type: 'PRODUCT',
-          code: cart.items[0].productId,
-          items: [
-            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
-          ]
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            collectedQuantity: cart.items[0].quantity,
+            promoQuantity: promotion.if.product.quantity,
+            threshold: cart.items[0].quantity / promotion.if.product.quantity,
+            value: cart.items[0].quantity / promotion.if.product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[0].productId,
+            items: [
+              { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+            ]
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -276,24 +282,26 @@ describe('Calculate cart promotions', () => {
         { id: '0', productId, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          collectedQuantity: cart.items[0].quantity,
-          promoQuantity: promotion.if.product.quantity,
-          threshold: promotion.if.product.threshold,
-          value: cart.items[0].quantity / promotion.if.product.quantity,
-          type: 'PRODUCT',
-          code: cart.items[0].productId,
-          items: [
-            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
-          ]
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            collectedQuantity: cart.items[0].quantity,
+            promoQuantity: promotion.if.product.quantity,
+            threshold: promotion.if.product.threshold,
+            value: cart.items[0].quantity / promotion.if.product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[0].productId,
+            items: [
+              { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+            ]
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -316,25 +324,27 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          collectedQuantity: expectedQuantity,
-          promoQuantity: promotion.if.product.quantity,
-          threshold: expectedQuantity / promotion.if.product.quantity,
-          value: expectedQuantity / promotion.if.product.quantity,
-          type: 'PRODUCT',
-          code: cart.items[0].productId,
-          items: [
-            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity },
-            { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-          ]
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            collectedQuantity: expectedQuantity,
+            promoQuantity: promotion.if.product.quantity,
+            threshold: expectedQuantity / promotion.if.product.quantity,
+            value: expectedQuantity / promotion.if.product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[0].productId,
+            items: [
+              { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity },
+              { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+            ]
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -355,7 +365,7 @@ describe('Calculate cart promotions', () => {
         { id: '0', productId, quantity: quantity - 2 }
       ]
     };
-    const expectedResponse = [];
+    const expectedResponse = {};
     createPromotion(promotion)
       .then(() => {
         mockProductList(productId, 'categories');
@@ -378,7 +388,7 @@ describe('Calculate cart promotions', () => {
         { id: '0', productId, quantity: quantity - 1 }
       ]
     };
-    const expectedResponse = [];
+    const expectedResponse = {};
     createPromotion(promotion)
       .then(() => {
         mockProductList(productId, 'categories');
@@ -407,17 +417,19 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId: productId2, quantity: quantity2 }
       ]
     };
-    const expectedResponse = [
-      {
-        items: [
-          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-        ]
-      }
-    ];
+    const expectedResponse = {
+      fulfilledPromos: [
+        {
+          items: [
+            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+          ]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -444,28 +456,30 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId: productId2, quantity: quantity2 - 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          and: [{
-            collectedQuantity: cart.items[1].quantity,
-            promoQuantity: promotion.if.and[1].product.quantity,
-            threshold: cart.items[1].quantity / promotion.if.and[0].product.quantity,
-            value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
-            type: 'PRODUCT',
-            code: cart.items[1].productId,
-            items: [
-              { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-            ]
-          }],
-          value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
-          / promotion.if.and.length
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            and: [{
+              collectedQuantity: cart.items[1].quantity,
+              promoQuantity: promotion.if.and[1].product.quantity,
+              threshold: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+              value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[1].productId,
+              items: [
+                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+              ]
+            }],
+            value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
+            / promotion.if.and.length
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -492,28 +506,30 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId: productId2, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          and: [{
-            collectedQuantity: cart.items[1].quantity,
-            promoQuantity: promotion.if.and[1].product.quantity,
-            threshold: promotion.if.and[1].product.threshold,
-            value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
-            type: 'PRODUCT',
-            code: cart.items[1].productId,
-            items: [
-              { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-            ]
-          }],
-          value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
-          / promotion.if.and.length
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            and: [{
+              collectedQuantity: cart.items[1].quantity,
+              promoQuantity: promotion.if.and[1].product.quantity,
+              threshold: promotion.if.and[1].product.threshold,
+              value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[1].productId,
+              items: [
+                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+              ]
+            }],
+            value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
+            / promotion.if.and.length
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -540,7 +556,7 @@ describe('Calculate cart promotions', () => {
         { id: '1', productId: productId2, quantity: 1 }
       ]
     };
-    const expectedResponse = [];
+    const expectedResponse = {};
     createPromotion(promotion)
       .then(() => {
         mockProductList(`${productId1},${productId2}`, 'categories');
@@ -579,17 +595,38 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: quantity3 - 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        items: [
-          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-        ]
-      }
-    ];
+    const expectedResponse = {
+      fulfilledPromos: [
+        {
+          items: [
+            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+          ]
+        }
+      ],
+      almostFulfilledPromos: [
+        {
+          data: [{
+            any: [{
+              collectedQuantity: cart.items[2].quantity,
+              promoQuantity: promotion.if.any[1].product.quantity,
+              threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+              value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[2].productId,
+              items: [
+                { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
+              ]
+            }],
+            value: cart.items[2].quantity / promotion.if.any[1].product.quantity
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -626,16 +663,57 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: quantity3 }
       ]
     };
-    const expectedResponse = [
-      {
-        items: [
-          { itemId: cart.items[2].id, quantityUsed: cart.items[2].quantity }
-        ]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [
+            {
+              any: [
+                {
+                  and: [
+                    {
+                      collectedQuantity: cart.items[0].quantity,
+                      promoQuantity: promotion.if.any[0].and[0].product.quantity,
+                      threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                      value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                      type: 'PRODUCT',
+                      code: cart.items[0].productId,
+                      items: [
+                        { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+                      ]
+                    }, {
+                      collectedQuantity: cart.items[1].quantity,
+                      promoQuantity: promotion.if.any[0].and[1].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      type: 'PRODUCT',
+                      code: cart.items[1].productId,
+                      items: [
+                        { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+                      ]
+                    }],
+                  value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+                  + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+                  / promotion.if.any[0].and.length
+                }],
+              value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+              + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+              / promotion.if.any[0].and.length
+            }]
+        }
+      ],
+      fulfilledPromos: [
+        {
+          items: [
+            { itemId: cart.items[2].id, quantityUsed: cart.items[2].quantity }
+          ]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -672,32 +750,34 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          any: [{
-            and: [{
-              collectedQuantity: cart.items[1].quantity,
-              promoQuantity: promotion.if.any[0].and[1].product.quantity,
-              threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-              type: 'PRODUCT',
-              code: cart.items[1].productId,
-              items: [
-                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-              ]
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            any: [{
+              and: [{
+                collectedQuantity: cart.items[1].quantity,
+                promoQuantity: promotion.if.any[0].and[1].product.quantity,
+                threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                type: 'PRODUCT',
+                code: cart.items[1].productId,
+                items: [
+                  { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+                ]
+              }],
+              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
+              / promotion.if.any[0].and.length
             }],
             value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
             / promotion.if.any[0].and.length
-          }],
-          value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
-          / promotion.if.any[0].and.length
-        }]
-      }
-    ];
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -734,44 +814,46 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          any: [{
-            and: [{
-              collectedQuantity: cart.items[0].quantity,
-              promoQuantity: promotion.if.any[0].and[0].product.quantity,
-              threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
-              value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
-              type: 'PRODUCT',
-              code: cart.items[0].productId,
-              items: [
-                { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
-              ]
-            }, {
-              collectedQuantity: cart.items[1].quantity,
-              promoQuantity: promotion.if.any[0].and[1].product.quantity,
-              threshold: promotion.if.any[0].and[1].product.threshold,
-              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-              type: 'PRODUCT',
-              code: cart.items[1].productId,
-              items: [
-                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-              ]
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            any: [{
+              and: [{
+                collectedQuantity: cart.items[0].quantity,
+                promoQuantity: promotion.if.any[0].and[0].product.quantity,
+                threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                type: 'PRODUCT',
+                code: cart.items[0].productId,
+                items: [
+                  { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+                ]
+              }, {
+                collectedQuantity: cart.items[1].quantity,
+                promoQuantity: promotion.if.any[0].and[1].product.quantity,
+                threshold: promotion.if.any[0].and[1].product.threshold,
+                value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                type: 'PRODUCT',
+                code: cart.items[1].productId,
+                items: [
+                  { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+                ]
+              }],
+              value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+              + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+              / promotion.if.any[0].and.length
             }],
             value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
             + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
             / promotion.if.any[0].and.length
-          }],
-          value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-          + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-          / promotion.if.any[0].and.length
-        }]
-      }
-    ];
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -808,27 +890,29 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: quantity3 - 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [{
-          any: [{
-            collectedQuantity: cart.items[2].quantity,
-            promoQuantity: promotion.if.any[1].product.quantity,
-            threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
-            value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
-            type: 'PRODUCT',
-            code: cart.items[2].productId,
-            items: [
-              { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
-            ]
-          }],
-          value: cart.items[2].quantity / promotion.if.any[1].product.quantity
-        }]
-      }
-    ];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [{
+            any: [{
+              collectedQuantity: cart.items[2].quantity,
+              promoQuantity: promotion.if.any[1].product.quantity,
+              threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+              value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[2].productId,
+              items: [
+                { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
+              ]
+            }],
+            value: cart.items[2].quantity / promotion.if.any[1].product.quantity
+          }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -865,55 +949,58 @@ describe('Calculate cart promotions', () => {
         { id: '2', productId: productId3, quantity: quantity3 - 1 }
       ]
     };
-    const expectedResponse = [
-      {
-        data: [
-          {
-            any: [
-              {
-                and: [
-                  {
-                    collectedQuantity: cart.items[0].quantity,
-                    promoQuantity: promotion.if.any[0].and[0].product.quantity,
-                    threshold: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
-                    value: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
-                    type: 'PRODUCT',
-                    code: cart.items[0].productId,
-                    items: [
-                      { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
-                    ]
-                  }, {
-                    collectedQuantity: cart.items[1].quantity,
-                    promoQuantity: promotion.if.any[0].and[1].product.quantity,
-                    threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-                    value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-                    type: 'PRODUCT',
-                    code: cart.items[1].productId,
-                    items: [
-                      { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
-                    ]
-                  }],
-                value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-                + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-                / promotion.if.any[0].and.length
-              },
-              {
-                collectedQuantity: cart.items[2].quantity,
-                promoQuantity: promotion.if.any[1].product.quantity,
-                threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
-                value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
-                type: 'PRODUCT',
-                code: cart.items[2].productId,
-                items: [
-                  { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
-                ]
-              }],
-            value: cart.items[2].quantity / promotion.if.any[1].product.quantity
-          }]
-      }];
+    const expectedResponse = {
+      almostFulfilledPromos: [
+        {
+          data: [
+            {
+              any: [
+                {
+                  and: [
+                    {
+                      collectedQuantity: cart.items[0].quantity,
+                      promoQuantity: promotion.if.any[0].and[0].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
+                      type: 'PRODUCT',
+                      code: cart.items[0].productId,
+                      items: [
+                        { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+                      ]
+                    }, {
+                      collectedQuantity: cart.items[1].quantity,
+                      promoQuantity: promotion.if.any[0].and[1].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      type: 'PRODUCT',
+                      code: cart.items[1].productId,
+                      items: [
+                        { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+                      ]
+                    }],
+                  value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+                  + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+                  / promotion.if.any[0].and.length
+                },
+                {
+                  collectedQuantity: cart.items[2].quantity,
+                  promoQuantity: promotion.if.any[1].product.quantity,
+                  threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+                  value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+                  type: 'PRODUCT',
+                  code: cart.items[2].productId,
+                  items: [
+                    { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
+                  ]
+                }],
+              value: cart.items[2].quantity / promotion.if.any[1].product.quantity
+            }]
+        }
+      ]
+    };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })

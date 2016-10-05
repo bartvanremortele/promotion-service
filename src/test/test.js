@@ -1,5 +1,3 @@
-const shortId = require('shortid');
-
 const Code = require('code');
 const Lab = require('lab');
 const nock = require('nock');
@@ -84,11 +82,11 @@ function evaluatePromotions(cart) {
 }
 
 // Helper to mock a successful stock:reserve call
-function mockProductList(id, fields) {
-  const ids = id.split(',');
+function mockProductList(idsList, fields) {
+  const ids = idsList.split(',');
   nock('http://gateway')
     .post('/services/catalog/v1/product.list', {
-      id,
+      id: idsList,
       fields
     })
     .reply(200, {
@@ -96,6 +94,23 @@ function mockProductList(id, fields) {
       page: { limit: 10, skip: 0 },
       data: ids.map(id => ({ id, categories: ['BJeVBrmsV'] }))
     });
+}
+
+// Helper to validate responses
+function checkResponse(response, data, done) {
+  expect(response.statusCode).to.equal(200);
+  expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
+  expect(response.result.fulfilledPromos).to.be.an.array();
+  expect(response.result.almostFulfilledPromos).to.be.an.array();
+  console.log(response.result);
+  if (response.result.fulfilledPromos.length > 0) {
+    expect(response.result.fulfilledPromos).to.equal(data);
+    expect(response.result.almostFulfilledPromos).to.be.an.array().and.to.have.length(0);
+  } else {
+    expect(response.result.almostFulfilledPromos).to.equal(data);
+    expect(response.result.fulfilledPromos).to.be.an.array().and.to.have.length(0);
+  }
+  if (done) done();
 }
 
 /*
@@ -144,7 +159,7 @@ describe('Promotion CRUDs', () => {
   });
 });
 
-describe('Calculate promotions', () => {
+describe('Calculate cart promotions', () => {
   beforeEach(done => {
     initDB(done);
   });
@@ -152,269 +167,232 @@ describe('Calculate promotions', () => {
     cleanDB(done);
   });
 
-  it('3x2 fulfilled one item per product', done => {
-    const productId = 'SksexGRPn4';
+  it('3x2 fulfilled', done => {
+    const productId = '0001';
     const quantity = 3;
-    let promoId;
     const promotion = {
       if: {
-        product: {
-          id: productId,
-          quantity
-        }
+        product: { id: productId, quantity }
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity }
+      ]
+    };
+    const expectedResponse = [
+      { items: [{ itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity }] }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            {
-              id: '0',
-              productId,
-              quantity,
-              price: 100.00
-            }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(1);
-        const ffp = ffps[0];
-        expect(ffp.id).to.be.a.string().and.to.equal(promoId);
-        expect(ffp.items).to.be.an.array().and.to.have.length(1);
-        expect(ffp.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(ffp.items[0].quantityUsed).to.be.a.number().and.to.equal(quantity);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(0);
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('3x2 fulfilled two items per product', done => {
-    const productId = 'SksexGRPn4';
+  it('3x2 fulfilled, two items per product', done => {
+    const productId = '0001';
     const quantity = 3;
-    let promoId;
     const promotion = {
       if: {
-        product: {
-          id: productId,
-          quantity
-        }
+        product: { id: productId, quantity }
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: quantity - 1 },
+        { id: '1', productId, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        items: [
+          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+        ]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            {
-              id: '0',
-              productId,
-              quantity: quantity - 1,
-              price: 100.00
-            }, {
-              id: '1',
-              productId,
-              quantity: 1,
-              price: 100.00
-            }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(1);
-        const ffp = ffps[0];
-        expect(ffp.id).to.be.a.string().and.to.equal(promoId);
-        expect(ffp.items).to.be.an.array().and.to.have.length(2);
-        expect(ffp.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(ffp.items[0].quantityUsed).to.be.a.number().and.to.equal(quantity - 1);
-        expect(ffp.items[1].itemId).to.be.a.string().and.to.equal('1');
-        expect(ffp.items[1].quantityUsed).to.be.a.number().and.to.equal(1);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(0);
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('3x2 almost fulfilled one item per product', done => {
-    const productId = 'SksexGRPn4';
+  it('3x2 almost fulfilled', done => {
+    const productId = '0001';
     const quantity = 3;
-    let promoId;
     const promotion = {
       if: {
-        product: {
-          id: productId,
-          quantity
-        }
+        product: { id: productId, quantity }
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: quantity - 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          collectedQuantity: cart.items[0].quantity,
+          promoQuantity: promotion.if.product.quantity,
+          threshold: cart.items[0].quantity / promotion.if.product.quantity,
+          value: cart.items[0].quantity / promotion.if.product.quantity,
+          type: 'PRODUCT',
+          code: cart.items[0].productId,
+          items: [
+            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+          ]
+        }]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            {
-              id: '0',
-              productId,
-              quantity: quantity - 1,
-              price: 100.00
-            }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(1);
-        const affp = affps[0];
-        expect(affp.id).to.be.a.string().and.to.equal(promoId);
-        const data = affp.data[0];
-        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
-        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity);
-        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
-        expect(data.code).to.be.a.string().and.to.equal(productId);
-
-        expect(data.items).to.be.an.array().and.to.have.length(1);
-        expect(data.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(quantity - 1);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(0);
-
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('3x2 almost fulfilled two items per product', done => {
-    const productId = 'SksexGRPn4';
+  it('3x2 almost fulfilled, with threshold', done => {
+    const productId = '0001';
     const quantity = 3;
-    let promoId;
     const promotion = {
       if: {
-        product: {
-          id: productId,
-          quantity
-        }
+        product: { id: productId, quantity, threshold: 0.3 }
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          collectedQuantity: cart.items[0].quantity,
+          promoQuantity: promotion.if.product.quantity,
+          threshold: promotion.if.product.threshold,
+          value: cart.items[0].quantity / promotion.if.product.quantity,
+          type: 'PRODUCT',
+          code: cart.items[0].productId,
+          items: [
+            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+          ]
+        }]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            {
-              id: '0',
-              productId,
-              quantity: 1,
-              price: 100.00
-            }, {
-              id: '1',
-              productId,
-              quantity: 1,
-              price: 100.00
-            }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(1);
-        const affp = affps[0];
-        expect(affp.id).to.be.a.string().and.to.equal(promoId);
-
-        const data = affp.data[0];
-        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity - 1);
-        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity);
-        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
-        expect(data.code).to.be.a.string().and.to.equal(productId);
-
-        expect(data.items).to.be.an.array().and.to.have.length(2);
-        expect(data.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(1);
-        expect(data.items[1].itemId).to.be.a.string().and.to.equal('1');
-        expect(data.items[1].quantityToUse).to.be.a.number().and.to.equal(1);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(0);
-
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('3x2 not filled', done => {
-    const productId = 'SksexGRPn4';
+  it('3x2 almost fulfilled, two items per product', done => {
+    const productId = '0001';
     const quantity = 3;
-    let promoId;
+    const expectedQuantity = 2;
     const promotion = {
       if: {
-        product: {
-          id: productId,
-          quantity
-        }
+        product: { id: productId, quantity }
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: 1 },
+        { id: '1', productId, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          collectedQuantity: expectedQuantity,
+          promoQuantity: promotion.if.product.quantity,
+          threshold: expectedQuantity / promotion.if.product.quantity,
+          value: expectedQuantity / promotion.if.product.quantity,
+          type: 'PRODUCT',
+          code: cart.items[0].productId,
+          items: [
+            { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity },
+            { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+          ]
+        }]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            {
-              id: '0',
-              productId,
-              quantity: quantity - 2,
-              price: 100.00
-            }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        expect(response.result.almostFulfilledPromos).to.be.an.array().and.to.have.length(0);
-        expect(response.result.fulfilledPromos).to.be.an.array().and.to.have.length(0);
-
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('AND 3x2 fulfilled one item per product', done => {
-    const productId1 = 'SksexGRPn4';
-    const productId2 = 'By2ZWfAPnV';
+  it('3x2 not fulfilled', done => {
+    const productId = '0001';
+    const quantity = 3;
+    const promotion = {
+      if: {
+        product: { id: productId, quantity }
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: quantity - 2 }
+      ]
+    };
+    const expectedResponse = [];
+    createPromotion(promotion)
+      .then(() => {
+        mockProductList(productId, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
+  });
+
+  it('3x2 not fulfilled, with threshold', done => {
+    const productId = '0001';
+    const quantity = 3;
+    const promotion = {
+      if: {
+        product: { id: productId, quantity, threshold: 0.8 }
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId, quantity: quantity - 1 }
+      ]
+    };
+    const expectedResponse = [];
+    createPromotion(promotion)
+      .then(() => {
+        mockProductList(productId, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
+  });
+
+  it('(3x2 AND 3x2) fulfilled', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
     const quantity1 = 3;
     const quantity2 = 3;
-    let promoId;
     const promotion = {
       if: {
         and: [
@@ -423,45 +401,35 @@ describe('Calculate promotions', () => {
         ]
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: quantity2 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        items: [
+          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+        ]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            { id: '0', productId: productId1, quantity: quantity1, price: 100.00 },
-            { id: '1', productId: productId2, quantity: quantity2, price: 100.00 }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(1);
-        const ffp = ffps[0];
-        expect(ffp.id).to.be.a.string().and.to.equal(promoId);
-        expect(ffp.items).to.be.an.array().and.to.have.length(2);
-        expect(ffp.items[0].itemId).to.be.a.string().and.to.equal('0');
-        expect(ffp.items[0].quantityUsed).to.be.a.number().and.to.equal(quantity1);
-        expect(ffp.items[1].itemId).to.be.a.string().and.to.equal('1');
-        expect(ffp.items[1].quantityUsed).to.be.a.number().and.to.equal(quantity2);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(0);
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('AND 3x2 almostFulfilled one item per product', done => {
-    const productId1 = 'SksexGRPn4';
-    const productId2 = 'By2ZWfAPnV';
+  it('(3x2 AND 3x2) almostFulfilled', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
     const quantity1 = 3;
     const quantity2 = 3;
-    let promoId;
     const promotion = {
       if: {
         and: [
@@ -470,64 +438,486 @@ describe('Calculate promotions', () => {
         ]
       }
     };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: quantity2 - 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          and: [{
+            collectedQuantity: cart.items[1].quantity,
+            promoQuantity: promotion.if.and[1].product.quantity,
+            threshold: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+            value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[1].productId,
+            items: [
+              { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+            ]
+          }],
+          value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
+          / promotion.if.and.length
+        }]
+      }
+    ];
     createPromotion(promotion)
       .then(creationResponse => {
-        promoId = creationResponse.result.promotion.id;
-        const cart = {
-          items: [
-            { id: '0', productId: productId1, quantity: quantity1, price: 100.00 },
-            { id: '1', productId: productId2, quantity: quantity2 - 1, price: 100.00 }
-          ]
-        };
+        expectedResponse[0].id = creationResponse.result.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
-      .then(response => {
-        expect(response.statusCode).to.equal(200);
-
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-
-        const affps = response.result.almostFulfilledPromos;
-        expect(affps).to.be.an.array().and.to.have.length(1);
-        const affp = affps[0];
-        expect(affp.id).to.be.a.string().and.to.equal(promoId);
-        const data = affp.data[0];
-        expect(data.collectedQuantity).to.be.a.number().and.to.equal(quantity2 - 1);
-        expect(data.promoQuantity).to.be.a.number().and.to.equal(quantity2);
-        expect(data.type).to.be.a.string().and.to.equal('PRODUCT');
-        expect(data.code).to.be.a.string().and.to.equal(productId2);
-
-        expect(data.items).to.be.an.array().and.to.have.length(1);
-        expect(data.items[0].itemId).to.be.a.string().and.to.equal('1');
-        expect(data.items[0].quantityToUse).to.be.a.number().and.to.equal(quantity2 - 1);
-
-        const ffps = response.result.fulfilledPromos;
-        expect(ffps).to.be.an.array().and.to.have.length(0);
-
-        done();
-      });
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('Test or', done => {
-    done();
+  it('(3x2 AND 3x2) almostFulfilled, with threshold', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const promotion = {
+      if: {
+        and: [
+          { product: { id: productId1, quantity: quantity1 } },
+          { product: { id: productId2, quantity: quantity2, threshold: 0.3 } }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          and: [{
+            collectedQuantity: cart.items[1].quantity,
+            promoQuantity: promotion.if.and[1].product.quantity,
+            threshold: promotion.if.and[1].product.threshold,
+            value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[1].productId,
+            items: [
+              { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+            ]
+          }],
+          value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
+          / promotion.if.and.length
+        }]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('Test nested or/and ', done => {
-    done();
+  it('(3x2 AND 3x2) notFulfilled', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const promotion = {
+      if: {
+        and: [
+          { product: { id: productId1, quantity: quantity1 } },
+          { product: { id: productId2, quantity: quantity2 } }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [];
+    createPromotion(promotion)
+      .then(() => {
+        mockProductList(`${productId1},${productId2}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('Test nested or/and fulfilled', done => {
-    done();
+  it('((3x2 AND 3x2) OR 3x2) fulfilled AND', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: quantity2 },
+        { id: '2', productId: productId3, quantity: quantity3 - 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        items: [
+          { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
+          { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
+        ]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('Test nested or/and almost fulfilled the or', done => {
-    done();
+  it('((3x2 AND 3x2) OR 3x2) fulfilled OR', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 - 1 },
+        { id: '1', productId: productId2, quantity: quantity2 - 1 },
+        { id: '2', productId: productId3, quantity: quantity3 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        items: [
+          { itemId: cart.items[2].id, quantityUsed: cart.items[2].quantity }
+        ]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 
-  it('Test nested or/and almost fulfilled the and', done => {
-    done();
+  it('((3x2 AND 3x2) OR 3x2) almostFulfilled AND', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: quantity2 - 1 },
+        { id: '2', productId: productId3, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          any: [{
+            and: [{
+              collectedQuantity: cart.items[1].quantity,
+              promoQuantity: promotion.if.any[0].and[1].product.quantity,
+              threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[1].productId,
+              items: [
+                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+              ]
+            }],
+            value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
+            / promotion.if.any[0].and.length
+          }],
+          value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
+          / promotion.if.any[0].and.length
+        }]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
-  it('Test nested or/and almost fulfilled both', done => {
-    done();
+
+  it('((3x2 AND 3x2) OR 3x2) almostFulfilled AND, with threshold', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2, threshold: 0.3 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 - 1 },
+        { id: '1', productId: productId2, quantity: 1 },
+        { id: '2', productId: productId3, quantity: 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          any: [{
+            and: [{
+              collectedQuantity: cart.items[0].quantity,
+              promoQuantity: promotion.if.any[0].and[0].product.quantity,
+              threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+              value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[0].productId,
+              items: [
+                { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+              ]
+            }, {
+              collectedQuantity: cart.items[1].quantity,
+              promoQuantity: promotion.if.any[0].and[1].product.quantity,
+              threshold: promotion.if.any[0].and[1].product.threshold,
+              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+              type: 'PRODUCT',
+              code: cart.items[1].productId,
+              items: [
+                { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+              ]
+            }],
+            value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+            + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+            / promotion.if.any[0].and.length
+          }],
+          value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+          + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+          / promotion.if.any[0].and.length
+        }]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
+  });
+
+  it('((3x2 AND 3x2) OR 3x2) almostFulfilled OR', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 },
+        { id: '1', productId: productId2, quantity: 1 },
+        { id: '2', productId: productId3, quantity: quantity3 - 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [{
+          any: [{
+            collectedQuantity: cart.items[2].quantity,
+            promoQuantity: promotion.if.any[1].product.quantity,
+            threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+            value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+            type: 'PRODUCT',
+            code: cart.items[2].productId,
+            items: [
+              { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
+            ]
+          }],
+          value: cart.items[2].quantity / promotion.if.any[1].product.quantity
+        }]
+      }
+    ];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
+  });
+
+  it('((3x2 AND 3x2) OR 3x2) almostFulfilled AND & OR', done => {
+    const productId1 = '0001';
+    const productId2 = '0002';
+    const productId3 = '0003';
+    const quantity1 = 3;
+    const quantity2 = 3;
+    const quantity3 = 3;
+    const promotion = {
+      if: {
+        any: [
+          {
+            and: [
+              { product: { id: productId1, quantity: quantity1 } },
+              { product: { id: productId2, quantity: quantity2 } }
+            ]
+          },
+          {
+            product: { id: productId3, quantity: quantity3 }
+          }
+        ]
+      }
+    };
+    const cart = {
+      items: [
+        { id: '0', productId: productId1, quantity: quantity1 - 1 },
+        { id: '1', productId: productId2, quantity: quantity2 - 1 },
+        { id: '2', productId: productId3, quantity: quantity3 - 1 }
+      ]
+    };
+    const expectedResponse = [
+      {
+        data: [
+          {
+            any: [
+              {
+                and: [
+                  {
+                    collectedQuantity: cart.items[0].quantity,
+                    promoQuantity: promotion.if.any[0].and[0].product.quantity,
+                    threshold: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
+                    value: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
+                    type: 'PRODUCT',
+                    code: cart.items[0].productId,
+                    items: [
+                      { itemId: cart.items[0].id, quantityToUse: cart.items[0].quantity }
+                    ]
+                  }, {
+                    collectedQuantity: cart.items[1].quantity,
+                    promoQuantity: promotion.if.any[0].and[1].product.quantity,
+                    threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                    value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                    type: 'PRODUCT',
+                    code: cart.items[1].productId,
+                    items: [
+                      { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
+                    ]
+                  }],
+                value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
+                + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
+                / promotion.if.any[0].and.length
+              },
+              {
+                collectedQuantity: cart.items[2].quantity,
+                promoQuantity: promotion.if.any[1].product.quantity,
+                threshold: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+                value: cart.items[2].quantity / promotion.if.any[1].product.quantity,
+                type: 'PRODUCT',
+                code: cart.items[2].productId,
+                items: [
+                  { itemId: cart.items[2].id, quantityToUse: cart.items[2].quantity }
+                ]
+              }],
+            value: cart.items[2].quantity / promotion.if.any[1].product.quantity
+          }]
+      }];
+    createPromotion(promotion)
+      .then(creationResponse => {
+        expectedResponse[0].id = creationResponse.result.promotion.id;
+        mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
+        return evaluatePromotions(cart);
+      })
+      .then(response => checkResponse(response, expectedResponse, done))
+      .catch(error => done(error));
   });
 });

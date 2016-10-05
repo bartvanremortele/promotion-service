@@ -7,6 +7,22 @@
   "models": {
     "promotionModel": "./models/promotionModel"
   },
+  "promotions": {
+    "classes": {
+      "default": "./classes/default"
+    },
+    "default": {
+      "operations": {
+        "and": "./classes/default/and.js",
+        "any": "./classes/default/any.js",
+        "product": "./classes/default/product.js",
+        "category": "./classes/default/product.js",
+        "subtotal": "./classes/default/subtotal.js",
+        "period": "./classes/default/period.js",
+        "userType": "./classes/default/userType.js"
+      }
+    }
+  },
   "bus": {
     "engines": {
       "local": {
@@ -18,7 +34,7 @@
       }
     },
     "channels": {
-      "products": {
+      "promotions": {
         "name": "PROMOTIONS",
         "engine": "amqp"
       }

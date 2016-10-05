@@ -20,13 +20,16 @@ function factory(/* base */) {
         }
         // Is there enough quantity?
         if (pass) {
-          const cartItemQuantityUsed = context.cartContext[item.id] ? context.cartContext[item.id] : 0;
-          const promoItemContext = opContext[item.id] = opContext[item.id] || {
+          const cartItemQuantityUsed = context.cartContext[item.id]
+            ? context.cartContext[item.id].quantityUsed : 0;
+          const promoItemContext = opContext[item.id] = opContext[item.id]
+            || {
               quantityUsed: 0,
               promos: []
             };
           const quantityNeeded = promoQuantity - collectedQuantity;
-          const quantityAvailable = item.quantity - cartItemQuantityUsed - promoItemContext.quantityUsed;
+          const quantityAvailable = item.quantity - cartItemQuantityUsed
+            - promoItemContext.quantityUsed;
           if (quantityAvailable > 0) {
             const quantityToUse = quantityAvailable > quantityNeeded
               ? quantityNeeded : quantityAvailable;

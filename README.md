@@ -15,7 +15,7 @@ Given this promotion:
   "title" : "Promotion 01", 
   "class" : "default", 
   "active" : true, 
-  "priority" : NumberInt(100), 
+  "priority" : 100, 
   "if" : {
     "any" : [
       {
@@ -23,14 +23,14 @@ Given this promotion:
           {
             "product" : {
               "id" : "SksexGRPn4", 
-              "quantity" : NumberInt(5), 
+              "quantity" : 5, 
               "threshold" : 0.3
             }
           }, 
           {
             "product" : {
               "id" : "By2ZWfAPnV", 
-              "quantity" : NumberInt(3)
+              "quantity" : 3
             }
           }
         ]
@@ -38,7 +38,7 @@ Given this promotion:
       {
         "product" : {
           "id" : "BycbkfRDhV", 
-          "quantity" : NumberInt(3)
+          "quantity" : 3
         }
       }
     ]

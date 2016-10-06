@@ -1,1 +1,1 @@
-FROM ncornag/micro-promotion-service
+FROM ncornag/micro-docker-service

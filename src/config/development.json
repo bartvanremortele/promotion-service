@@ -2,8 +2,10 @@
   "logger": {
     "level": "debug"
   },
-  "services": {
-    "port": "3004"
+  "transports": {
+    "http": {
+      "port": "3004"
+    }
   },
   "gateway": {
     "gatewayUrlOverrride": "./config/gatewayUrlOverride"

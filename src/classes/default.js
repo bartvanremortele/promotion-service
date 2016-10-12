@@ -24,10 +24,15 @@
 function promotionFn(base) {
   const evaluator = new base.utils.Evaluator().use('promotions:default:operations');
 
-  const nli = () => {
-    const now = new Date().toISOString();
-    return `\n${now} - \u001b[34mdebug\u001b[39m: [promotions] `;
-  }
+  const debugJson = (title, json) => {
+    base.logger.debug('[promotions]', title);
+    JSON
+      .stringify(json, null, 2)
+      .split(/(?:\r\n|\r|\n)/g)
+      .forEach(line => {
+        base.logger.debug('[promotions]', line);
+      });
+  };
 
   return (context /* { result, promotion, cart, products, user } */) => {
     if (base.logger.isDebugEnabled()) {
@@ -81,16 +86,10 @@ function promotionFn(base) {
 
     if (base.logger.isDebugEnabled()) {
       if (context.fulfilledPromos.length > 0) {
-        base.logger.debug(
-          '[promotions] fulfilledPromos:',
-          JSON.stringify(context.fulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli())
-        );
+        debugJson('fulfilledPromos:', context.fulfilledPromos);
       }
       if (context.almostFulfilledPromos.length > 0) {
-        base.logger.debug(
-          '[promotions] almostFulfilledPromos:',
-          JSON.stringify(context.almostFulfilledPromos, null, 2).replace(/(?:\r\n|\r|\n)/g, nli())
-        );
+        debugJson('almostFulfilledPromos:', context.almostFulfilledPromos);
       }
     }
 

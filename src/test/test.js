@@ -1,6 +1,7 @@
 const Code = require('code');
 const Lab = require('lab');
 const nock = require('nock');
+const request = require('supertest-as-promised');
 
 // shortcuts
 const lab = exports.lab = Lab.script();
@@ -11,7 +12,7 @@ const it = lab.it;
 const expect = Code.expect;
 
 const base = require('../index.js');
-const server = base.services.server;
+const app = base.transports.http.app;
 
 const defaultHeaders = base.config.get('test:defaultHeaders');
 
@@ -56,7 +57,12 @@ function initDB(done) {
 function callService(options) {
   options.method = options.method || 'POST';
   options.headers = options.headers || defaultHeaders;
-  return server.inject(options);
+  const promise = request(app)[options.method.toLowerCase()](options.url);
+  Object.keys(options.headers).forEach(key => {
+    promise.set(key, options.headers[key]);
+  });
+  if (options.payload) promise.send(options.payload);
+  return promise;
 }
 
 // Helper to create promotions
@@ -105,10 +111,10 @@ function checkResponse(response, data, done) {
 
   expect(response.statusCode).to.equal(200);
 
-  expect(response.result.fulfilledPromos).to.be.an.array();
-  expect(response.result.almostFulfilledPromos).to.be.an.array();
+  expect(response.body.fulfilledPromos).to.be.an.array();
+  expect(response.body.almostFulfilledPromos).to.be.an.array();
 
-  expect(response.result).to.equal(data);
+  expect(response.body).to.equal(data);
 
   if (done) done();
 }
@@ -145,9 +151,9 @@ describe('Promotion CRUDs', () => {
         //     if: {}
         //   }
         // }
-        expect(response.result.ok).to.be.a.boolean().and.to.equal(true);
-        expect(response.result.promotion).to.be.an.instanceof(Object);
-        const promotion = response.result.promotion;
+        expect(response.body.ok).to.be.a.boolean().and.to.equal(true);
+        expect(response.body.promotion).to.be.an.instanceof(Object);
+        const promotion = response.body.promotion;
         expect(promotion.id).to.be.a.string();
         expect(promotion.title).to.be.a.string().and.to.equal(payload.title);
         expect(promotion.class).to.be.a.string().and.to.equal(payload.class);
@@ -187,7 +193,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -221,7 +227,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -261,7 +267,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -301,7 +307,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -344,7 +350,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -429,7 +435,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -479,7 +485,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -529,7 +535,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -625,8 +631,8 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -712,8 +718,8 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.result.promotion.id;
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -777,7 +783,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -853,7 +859,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -912,7 +918,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -1000,7 +1006,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.almostFulfilledPromos[0].id = creationResponse.result.promotion.id;
+        expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
       })

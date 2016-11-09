@@ -57,7 +57,8 @@ function opFactory(base) {
               name: 'catalog:product.list'
             }, {
               id: productIds.join(','),
-              fields: 'categories'
+              fields: 'categories',
+              categoryPaths: true
             })
             .then(productsList => {
               return productsList.data.reduce((result, item) => {

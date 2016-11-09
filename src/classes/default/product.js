@@ -1,6 +1,7 @@
 function factory(/* base */) {
   return {
     name: 'product',
+    alias: ['category'],
     fn: (context, opContext, level, { product: promoProduct, category: promoCategory }, evaluator) => {
       // Search the product/category in the cart, counting against the threshold (quantity)
       let collectedQuantity = 0;
@@ -13,10 +14,14 @@ function factory(/* base */) {
         if (promoProduct && promoProduct.id === item.productId) {
           pass = true;
         }
-        if (promoCategory &&
-          context.products[item.productId]
-            .categories.indexOf(promoCategory.id) !== -1) {
-          pass = true;
+        const product = context.products[item.productId];
+        if (!pass && promoCategory) {
+          for (const categoryId of product.categories) {
+            if (product.categoryPaths[categoryId].indexOf(promoCategory.id) !== -1) {
+              pass = true;
+              break;
+            }
+          }
         }
         // Is there enough quantity?
         if (pass) {

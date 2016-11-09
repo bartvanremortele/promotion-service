@@ -6,7 +6,11 @@
     }
   },
   "services": {
-    "port": "5050"
+    "port": "5050",
+    "defaultTransports": [
+      "http"
+    ],
+    "defaultCallTransport": "http"
   },
   "db": {
     "host": "mongo",

@@ -9,7 +9,7 @@
        {product: {id: '0002', quantity: 3}},
        {category: {id: 'aaa', quantity: 3}}
      ]},
-     {subtotal_gte: 100.00},
+     {subtotal: 100.00},
      {usertType: 'VIP'},
      {period: {
        from : '2016-09-21T14:00:00.000+0000',
@@ -22,7 +22,7 @@
 // @formatter:on
 
 function promotionFn(base) {
-  const evaluator = new base.utils.Evaluator().use('promotions:default:operations');
+  const rulesEvaluator = new base.utils.Evaluator().use('promotions:default:rules');
 
   const debugJson = (title, json) => {
     base.logger.debug('[promotions]', title);
@@ -34,18 +34,18 @@ function promotionFn(base) {
       });
   };
 
-  return (context /* { result, promotion, cart, products, user } */) => {
+  return (context) => {
     if (base.logger.isDebugEnabled()) {
       base.logger.debug(`[promotions] Firing '${context.promotion.title}' [${context.promotion.id}] check for cart [${context.cart.cartId}]`);
     }
 
     const opContext = {};
-    const result = evaluator.evaluate(context, opContext, 0, context.promotion.if);
+    const result = rulesEvaluator.evaluate(context, opContext, 0, context.promotion.if);
 
     if (result.ok) {
       // Promotion condition fulfilled!
 
-      // Copy the promoContext to context.cartContext, to not allow product reuse
+      // Copy the promoContext to context.cartContext to avoid product reuse
       Object.keys(opContext).forEach(itemId => {
         if (opContext[itemId].quantityUsed > 0) {
           const cartItemContext = context.cartContext[itemId] = context.cartContext[itemId]
@@ -84,6 +84,7 @@ function promotionFn(base) {
       }
     }
 
+    // Log the output
     if (base.logger.isDebugEnabled()) {
       if (context.fulfilledPromos.length > 0) {
         debugJson('fulfilledPromos:', context.fulfilledPromos);
@@ -92,17 +93,6 @@ function promotionFn(base) {
         debugJson('almostFulfilledPromos:', context.almostFulfilledPromos);
       }
     }
-
-    // console.log('*** This promo result');
-    // console.log(JSON.stringify(result, null, 2));
-    // console.log('*** This promo context');
-    // console.log(JSON.stringify(opContext, null, 2));
-    // console.log('*** Cart context');
-    // console.log(JSON.stringify(context.cartContext, null, 2));
-    // console.log('*** Fulfilled promos');
-    // console.log(JSON.stringify(context.fulfilledPromos, null, 2));
-    // console.log('*** Almost fulfilled promos');
-    // console.log(JSON.stringify(context.almostFulfilledPromos, null, 2));
   };
 }
 

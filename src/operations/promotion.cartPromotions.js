@@ -32,11 +32,16 @@ function opFactory(base) {
     loadPromotions();
   });
 
-  // Preload promotion classes
-  const promotionClassesLocation = base.config.get('promotions:classes');
-  const promotionClasses = {};
-  Object.keys(promotionClassesLocation).forEach(key => {
-    promotionClasses[key] = base.utils.loadModule(`promotions:classes:${key}`);
+  const classesLocation = base.config.get('promotions:classes');
+  // Preload rules classes
+  const rulesClasses = {};
+  Object.keys(classesLocation).forEach(key => {
+    rulesClasses[key] = base.utils.loadModule(`promotions:classes:${key}:rules`);
+  });
+  // Preload discounts classes
+  const discountsClasses = {};
+  Object.keys(classesLocation).forEach(key => {
+    discountsClasses[key] = base.utils.loadModule(`promotions:classes:${key}:discounts`);
   });
 
   const op = {
@@ -71,12 +76,13 @@ function opFactory(base) {
           const cartContext = {};
           const fulfilledPromos = [];
           const almostFulfilledPromos = [];
+          // Run each promotion until there is no change in the fullfilled outcome
           promotions.forEach(promotion => {
             let last = 0;
             let previous = 0;
             do {
               previous = last;
-              promotionClasses[promotion.class]({
+              rulesClasses[promotion.class]({
                 promotion,
                 cart,
                 products,
@@ -88,9 +94,20 @@ function opFactory(base) {
               last = fulfilledPromos.length;
             } while (last > previous);
           });
+          if (fulfilledPromos.length > 0) {
+            // Apply the product discounts
+            promotions.forEach(promotion => {
+              discountsClasses[promotion.class]({
+                promotion,
+                cart,
+                fulfilledPromos
+              });
+            });
+          }
           reply(base.utils.genericResponse({
             fulfilledPromos,
-            almostFulfilledPromos
+            almostFulfilledPromos,
+            cart
           }));
         })
         .catch(error => reply(base.utils.genericResponse(null, error)));

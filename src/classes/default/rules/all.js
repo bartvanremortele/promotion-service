@@ -1,7 +1,7 @@
 function factory(/* base */) {
   return {
-    name: 'and',
-    fn: (context, opContext, level, { and: ops, threshold: threshold = 0 }, evaluator) => {
+    name: 'all',
+    fn: (context, opContext, level, { all: ops, threshold: threshold = 0 }, evaluator) => {
       const thisOpContext = {};
       Object.keys(opContext).forEach(id => {
         thisOpContext[id] = opContext[id];
@@ -10,7 +10,7 @@ function factory(/* base */) {
       let trues = 0;
       let value = 0;
       // Evaluate all the operands to get the messages
-      for (let op of ops) {
+      for (const op of ops) {
         const result = evaluator.evaluate(context, thisOpContext, level + 1, op);
         if (result.ok) trues += 1;
         if (result.data) {

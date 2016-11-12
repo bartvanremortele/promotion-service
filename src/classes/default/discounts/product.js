@@ -31,7 +31,9 @@ function factory(/* base */) {
         }
       });
 
-      return true;
+      return {
+        ok: true
+      };
     }
   };
 }

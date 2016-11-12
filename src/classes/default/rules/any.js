@@ -4,7 +4,7 @@ function factory(/* base */) {
     fn: (context, opContext, level, { any: ops, threshold: threshold = 0 }, evaluator) => {
       const data = { any: [] };
       let value = 0;
-      for (let op of ops) {
+      for (const op of ops) {
         const thisOpContext = {};
         Object.keys(opContext).forEach(id => {
           thisOpContext[id] = opContext[id];

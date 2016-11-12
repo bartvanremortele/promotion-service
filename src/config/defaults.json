@@ -16,17 +16,17 @@
     },
     "default": {
       "rules": {
-        "and": "./classes/default/rules/and.js",
+        "all": "./classes/default/rules/all.js",
         "any": "./classes/default/rules/any.js",
         "product": "./classes/default/rules/product.js",
-        "category": "./classes/default/rules/product.js",
         "subtotal": "./classes/default/rules/subtotal.js",
         "period": "./classes/default/rules/period.js",
         "userType": "./classes/default/rules/userType.js"
       },
       "discounts": {
-        "product": "./classes/default/discounts/product.js",
-        "category": "./classes/default/discounts/product.js"
+        "all": "./classes/default/discounts/all.js",
+        "any": "./classes/default/discounts/any.js",
+        "product": "./classes/default/discounts/product.js"
       }
     }
   },

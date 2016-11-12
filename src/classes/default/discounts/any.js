@@ -1,6 +1,5 @@
 function factory(/* base */) {
   return {
-    name: 'any',
     fn: (context, opContext, level, { any: ops }, evaluator) => {
       for (const op of ops) {
         const result = evaluator.evaluate(context, {}, level + 1, op);

@@ -1,6 +1,5 @@
 function factory(/* base */) {
   return {
-    name: 'any',
     fn: (context, opContext, level, { any: ops, threshold: threshold = 0 }, evaluator) => {
       const data = { any: [] };
       let value = 0;

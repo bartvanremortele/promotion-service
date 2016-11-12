@@ -1,6 +1,5 @@
 function factory(/* base */) {
   return {
-    name: 'product',
     alias: ['category'],
     fn: (context, opContext, level, { product: promoProduct, category: promoCategory }, evaluator) => {
       // Search the product/category in the cart, counting against the threshold (quantity)

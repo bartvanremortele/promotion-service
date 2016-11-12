@@ -1,6 +1,5 @@
 function factory(/* base */) {
   return {
-    name: 'all',
     fn: (context, opContext, level, { all: ops, threshold: threshold = 0 }, evaluator) => {
       const thisOpContext = {};
       Object.keys(opContext).forEach(id => {

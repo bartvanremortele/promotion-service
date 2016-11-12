@@ -3,7 +3,6 @@
  */
 function factory(/* base */) {
   return {
-    name: 'product',
     alias: ['category'],
     fn: (context, opContext, level, { product: dicountProduct, category: dicountCategory }, evaluator) => {
       const promo = context.fulfilledPromos.find(p => p.id === context.promotion.id);
@@ -23,7 +22,7 @@ function factory(/* base */) {
             ? cartItem.quantity
             : quantityMissing;
           quantityDiscounted += quantityAvailable;
-          promoItem.quantityApplied = (promoItem.quantityApplied | 0) + quantityAvailable;
+          promoItem.quantityApplied = (promoItem.quantityApplied || 0) + quantityAvailable;
           cartItem.discountedItems = quantityAvailable;
           cartItem.discountedTotal = dicountProduct.discount.isPercentage
             ? Math.round(cartItem.price * quantityAvailable * dicountProduct.discount.rate / 100)

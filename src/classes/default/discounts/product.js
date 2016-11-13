@@ -5,16 +5,10 @@ function factory(/* base */) {
   return {
     alias: ['category'],
     fn: (context, opContext, level, { product: dicountProduct, category: dicountCategory }, evaluator) => {
-      const promo = context.fulfilledPromos.find(p => p.id === context.promotion.id);
       const quantityToDiscount = dicountProduct ? dicountProduct.quantity : dicountCategory.quantity;
-
-      // console.log('--- discount ---');
-      // console.log(dicountProduct);
-      // console.log('--- fulfilled promo ---');
-      // console.log(JSON.stringify(promo, null, 2));
-
+      const discountToDiscount = dicountProduct ? dicountProduct.discount : dicountCategory.discount;
       let quantityDiscounted = 0;
-      promo.items.forEach(promoItem => {
+      context.ffp.items.forEach(promoItem => {
         const cartItem = context.cart.items.find(it => it.id === promoItem.itemId);
         if (cartItem.productId === dicountProduct.id && quantityDiscounted < quantityToDiscount) {
           const quantityMissing = quantityToDiscount - quantityDiscounted;
@@ -22,11 +16,19 @@ function factory(/* base */) {
             ? cartItem.quantity
             : quantityMissing;
           quantityDiscounted += quantityAvailable;
+          const discount = discountToDiscount.isPercentage
+            ? Math.round(cartItem.price * quantityAvailable * discountToDiscount.rate / 100)
+            : discountToDiscount.rate * quantityAvailable;
           promoItem.quantityApplied = (promoItem.quantityApplied || 0) + quantityAvailable;
-          cartItem.discountedItems = quantityAvailable;
-          cartItem.discountedTotal = dicountProduct.discount.isPercentage
-            ? Math.round(cartItem.price * quantityAvailable * dicountProduct.discount.rate / 100)
-            : dicountProduct.discount.rate * quantityAvailable;
+          cartItem.discountedItems = (cartItem.discountedItems || 0) + quantityAvailable;
+          cartItem.discountedTotal = (cartItem.discountedTotal || 0) + discount;
+          cartItem.discounts = cartItem.discounts || [];
+          cartItem.discounts.push({
+            promotionId: context.promotion.id,
+            promotionTitle: context.promotion.title,
+            quantity: quantityAvailable,
+            discount
+          });
         }
       });
 

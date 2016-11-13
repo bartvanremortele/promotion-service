@@ -105,9 +105,13 @@ function opFactory(base) {
             });
           }
           reply(base.utils.genericResponse({
-            fulfilledPromos,
             almostFulfilledPromos,
-            cart
+            itemDiscounts: cart.items
+              .filter(item => item.discounts)
+              .map(({ id, discounts }) => ({
+                id,
+                discounts
+              }))
           }));
         })
         .catch(error => reply(base.utils.genericResponse(null, error)));

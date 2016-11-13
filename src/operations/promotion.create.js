@@ -16,7 +16,8 @@ function opFactory(base) {
         class: msg.class,
         active: msg.active,
         priority: msg.priority,
-        if: msg.if
+        if: msg.if,
+        then: msg.then
       });
       promotion.save()
         .then(savedPromotion => {

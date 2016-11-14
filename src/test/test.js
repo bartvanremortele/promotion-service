@@ -66,9 +66,10 @@ function callService(options) {
 }
 
 // Helper to create promotions
+const defaultPromotionTitle = 'Promotion';
 function createPromotion(payload) {
   Object.assign(payload, {
-    title: 'Promotion',
+    title: defaultPromotionTitle,
     class: defaultPromoClass,
     active: true,
     priority: 100
@@ -105,15 +106,11 @@ function mockProductList(idsList, fields) {
 // Helper to validate responses
 function checkResponse(response, data, done) {
   if (!data.ok) data.ok = true;
-
-  if (!data.fulfilledPromos) data.fulfilledPromos = [];
   if (!data.almostFulfilledPromos) data.almostFulfilledPromos = [];
+  if (!data.itemDiscounts) data.itemDiscounts = [];
 
   expect(response.statusCode).to.equal(200);
-
-  expect(response.body.fulfilledPromos).to.be.an.array();
   expect(response.body.almostFulfilledPromos).to.be.an.array();
-
   expect(response.body).to.equal(data);
 
   if (done) done();
@@ -133,7 +130,8 @@ describe('Promotion CRUDs', () => {
 
   it('creates a Promotion', done => {
     const payload = {
-      if: {}
+      if: {},
+      then: {}
     };
     createPromotion(payload)
       .then(response => {
@@ -176,24 +174,45 @@ describe('Calculate cart promotions', () => {
   it('3x2 fulfilled', done => {
     const productId = '0001';
     const quantity = 3;
+    const price = 100.00;
+    const rate = 10;
+    const discountQuantity = 1;
     const promotion = {
       if: {
-        product: { id: productId, quantity }
+        product: {
+          id: productId,
+          quantity
+        }
+      },
+      then: {
+        product: {
+          id: productId,
+          quantity: discountQuantity,
+          discount: {
+            isPercentage: true,
+            rate
+          }
+        }
       }
     };
     const cart = {
       items: [
-        { id: '0', productId, quantity }
+        { id: '0', productId, quantity, price }
       ]
     };
     const expectedResponse = {
-      fulfilledPromos: [
-        { items: [{ itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity }] }
-      ]
+      itemDiscounts: [{
+        id: cart.items[0].id,
+        discounts: [{
+          quantity: discountQuantity,
+          promotionTitle: defaultPromotionTitle,
+          discount: price * rate / 100 * discountQuantity
+        }]
+      }]
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.itemDiscounts[0].discounts[0].promotionId = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -204,30 +223,46 @@ describe('Calculate cart promotions', () => {
   it('3x2 fulfilled, two items per product', done => {
     const productId = '0001';
     const quantity = 3;
+    const price = 100.00;
+    const rate = 10;
+    const discountQuantity = 1;
     const promotion = {
       if: {
-        product: { id: productId, quantity }
+        product: {
+          id: productId,
+          quantity
+        }
+      },
+      then: {
+        product: {
+          id: productId,
+          quantity: discountQuantity,
+          discount: {
+            isPercentage: true,
+            rate
+          }
+        }
       }
     };
     const cart = {
       items: [
-        { id: '0', productId, quantity: quantity - 1 },
-        { id: '1', productId, quantity: 1 }
+        { id: '0', productId, quantity: quantity - 1, price },
+        { id: '1', productId, quantity: 1, price }
       ]
     };
     const expectedResponse = {
-      fulfilledPromos: [
-        {
-          items: [
-            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-          ]
-        }
-      ]
+      itemDiscounts: [{
+        id: cart.items[0].id,
+        discounts: [{
+          quantity: discountQuantity,
+          promotionTitle: defaultPromotionTitle,
+          discount: price * rate / 100 * discountQuantity
+        }]
+      }]
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.itemDiscounts[0].discounts[0].promotionId = creationResponse.body.promotion.id;
         mockProductList(productId, 'categories');
         return evaluatePromotions(cart);
       })
@@ -241,6 +276,8 @@ describe('Calculate cart promotions', () => {
     const promotion = {
       if: {
         product: { id: productId, quantity }
+      },
+      then: {
       }
     };
     const cart = {
@@ -281,7 +318,8 @@ describe('Calculate cart promotions', () => {
     const promotion = {
       if: {
         product: { id: productId, quantity, threshold: 0.3 }
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -322,7 +360,8 @@ describe('Calculate cart promotions', () => {
     const promotion = {
       if: {
         product: { id: productId, quantity }
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -364,7 +403,8 @@ describe('Calculate cart promotions', () => {
     const promotion = {
       if: {
         product: { id: productId, quantity }
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -387,7 +427,8 @@ describe('Calculate cart promotions', () => {
     const promotion = {
       if: {
         product: { id: productId, quantity, threshold: 0.8 }
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -409,33 +450,46 @@ describe('Calculate cart promotions', () => {
     const productId2 = '0002';
     const quantity1 = 3;
     const quantity2 = 3;
+    const price = 100.00;
+    const rate = 10;
+    const discountQuantity = 1;
     const promotion = {
       if: {
-        and: [
+        all: [
           { product: { id: productId1, quantity: quantity1 } },
           { product: { id: productId2, quantity: quantity2 } }
         ]
+      },
+      then: {
+        product: {
+          id: productId1,
+          quantity: discountQuantity,
+          discount: {
+            isPercentage: true,
+            rate
+          }
+        }
       }
     };
     const cart = {
       items: [
-        { id: '0', productId: productId1, quantity: quantity1 },
-        { id: '1', productId: productId2, quantity: quantity2 }
+        { id: '0', productId: productId1, quantity: quantity1, price },
+        { id: '1', productId: productId2, quantity: quantity2, price }
       ]
     };
     const expectedResponse = {
-      fulfilledPromos: [
-        {
-          items: [
-            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-          ]
-        }
-      ]
+      itemDiscounts: [{
+        id: cart.items[0].id,
+        discounts: [{
+          quantity: discountQuantity,
+          promotionTitle: defaultPromotionTitle,
+          discount: price * rate / 100 * discountQuantity
+        }]
+      }]
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.itemDiscounts[0].discounts[0].promotionId = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2}`, 'categories');
         return evaluatePromotions(cart);
       })
@@ -450,11 +504,12 @@ describe('Calculate cart promotions', () => {
     const quantity2 = 3;
     const promotion = {
       if: {
-        and: [
+        all: [
           { product: { id: productId1, quantity: quantity1 } },
           { product: { id: productId2, quantity: quantity2 } }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -466,19 +521,19 @@ describe('Calculate cart promotions', () => {
       almostFulfilledPromos: [
         {
           data: [{
-            and: [{
+            all: [{
               collectedQuantity: cart.items[1].quantity,
-              promoQuantity: promotion.if.and[1].product.quantity,
-              threshold: cart.items[1].quantity / promotion.if.and[0].product.quantity,
-              value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+              promoQuantity: promotion.if.all[1].product.quantity,
+              threshold: cart.items[1].quantity / promotion.if.all[0].product.quantity,
+              value: cart.items[1].quantity / promotion.if.all[0].product.quantity,
               type: 'PRODUCT',
               code: cart.items[1].productId,
               items: [
                 { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
               ]
             }],
-            value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
-            / promotion.if.and.length
+            value: (cart.items[1].quantity / promotion.if.all[0].product.quantity)
+            / promotion.if.all.length
           }]
         }
       ]
@@ -500,11 +555,12 @@ describe('Calculate cart promotions', () => {
     const quantity2 = 3;
     const promotion = {
       if: {
-        and: [
+        all: [
           { product: { id: productId1, quantity: quantity1 } },
           { product: { id: productId2, quantity: quantity2, threshold: 0.3 } }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -516,19 +572,19 @@ describe('Calculate cart promotions', () => {
       almostFulfilledPromos: [
         {
           data: [{
-            and: [{
+            all: [{
               collectedQuantity: cart.items[1].quantity,
-              promoQuantity: promotion.if.and[1].product.quantity,
-              threshold: promotion.if.and[1].product.threshold,
-              value: cart.items[1].quantity / promotion.if.and[0].product.quantity,
+              promoQuantity: promotion.if.all[1].product.quantity,
+              threshold: promotion.if.all[1].product.threshold,
+              value: cart.items[1].quantity / promotion.if.all[0].product.quantity,
               type: 'PRODUCT',
               code: cart.items[1].productId,
               items: [
                 { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
               ]
             }],
-            value: (cart.items[1].quantity / promotion.if.and[0].product.quantity)
-            / promotion.if.and.length
+            value: (cart.items[1].quantity / promotion.if.all[0].product.quantity)
+            / promotion.if.all.length
           }]
         }
       ]
@@ -550,11 +606,12 @@ describe('Calculate cart promotions', () => {
     const quantity2 = 3;
     const promotion = {
       if: {
-        and: [
+        all: [
           { product: { id: productId1, quantity: quantity1 } },
           { product: { id: productId2, quantity: quantity2 } }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -579,11 +636,14 @@ describe('Calculate cart promotions', () => {
     const quantity1 = 3;
     const quantity2 = 3;
     const quantity3 = 3;
+    const price = 100.00;
+    const discountQuantity = 1;
+    const rate = 10;
     const promotion = {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2 } }
             ]
@@ -592,24 +652,34 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
+      },
+      then: {
+        product: {
+          id: productId1,
+          quantity: discountQuantity,
+          discount: {
+            isPercentage: true,
+            rate
+          }
+        }
       }
     };
     const cart = {
       items: [
-        { id: '0', productId: productId1, quantity: quantity1 },
-        { id: '1', productId: productId2, quantity: quantity2 },
-        { id: '2', productId: productId3, quantity: quantity3 - 1 }
+        { id: '0', productId: productId1, quantity: quantity1, price },
+        { id: '1', productId: productId2, quantity: quantity2, price },
+        { id: '2', productId: productId3, quantity: quantity3 - 1, price }
       ]
     };
     const expectedResponse = {
-      fulfilledPromos: [
-        {
-          items: [
-            { itemId: cart.items[0].id, quantityUsed: cart.items[0].quantity },
-            { itemId: cart.items[1].id, quantityUsed: cart.items[1].quantity }
-          ]
-        }
-      ],
+      itemDiscounts: [{
+        id: cart.items[0].id,
+        discounts: [{
+          quantity: discountQuantity,
+          promotionTitle: defaultPromotionTitle,
+          discount: price * rate / 100 * discountQuantity
+        }]
+      }],
       almostFulfilledPromos: [
         {
           data: [{
@@ -631,7 +701,7 @@ describe('Calculate cart promotions', () => {
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.itemDiscounts[0].discounts[0].promotionId = creationResponse.body.promotion.id;
         expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
@@ -647,11 +717,14 @@ describe('Calculate cart promotions', () => {
     const quantity1 = 3;
     const quantity2 = 3;
     const quantity3 = 3;
+    const price = 100.00;
+    const discountQuantity = 1;
+    const rate = 10;
     const promotion = {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2 } }
             ]
@@ -660,13 +733,23 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
+      },
+      then: {
+        product: {
+          id: productId3,
+          quantity: discountQuantity,
+          discount: {
+            isPercentage: true,
+            rate
+          }
+        }
       }
     };
     const cart = {
       items: [
-        { id: '0', productId: productId1, quantity: quantity1 - 1 },
-        { id: '1', productId: productId2, quantity: quantity2 - 1 },
-        { id: '2', productId: productId3, quantity: quantity3 }
+        { id: '0', productId: productId1, quantity: quantity1 - 1, price },
+        { id: '1', productId: productId2, quantity: quantity2 - 1, price },
+        { id: '2', productId: productId3, quantity: quantity3, price }
       ]
     };
     const expectedResponse = {
@@ -676,12 +759,12 @@ describe('Calculate cart promotions', () => {
             {
               any: [
                 {
-                  and: [
+                  all: [
                     {
                       collectedQuantity: cart.items[0].quantity,
-                      promoQuantity: promotion.if.any[0].and[0].product.quantity,
-                      threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
-                      value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                      promoQuantity: promotion.if.any[0].all[0].product.quantity,
+                      threshold: cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity,
+                      value: cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity,
                       type: 'PRODUCT',
                       code: cart.items[0].productId,
                       items: [
@@ -689,36 +772,37 @@ describe('Calculate cart promotions', () => {
                       ]
                     }, {
                       collectedQuantity: cart.items[1].quantity,
-                      promoQuantity: promotion.if.any[0].and[1].product.quantity,
-                      threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-                      value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      promoQuantity: promotion.if.any[0].all[1].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
                       type: 'PRODUCT',
                       code: cart.items[1].productId,
                       items: [
                         { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
                       ]
                     }],
-                  value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-                  + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-                  / promotion.if.any[0].and.length
+                  value: ((cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity)
+                  + (cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity))
+                  / promotion.if.any[0].all.length
                 }],
-              value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-              + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-              / promotion.if.any[0].and.length
+              value: ((cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity)
+              + (cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity))
+              / promotion.if.any[0].all.length
             }]
         }
       ],
-      fulfilledPromos: [
-        {
-          items: [
-            { itemId: cart.items[2].id, quantityUsed: cart.items[2].quantity }
-          ]
-        }
-      ]
+      itemDiscounts: [{
+        id: cart.items[2].id,
+        discounts: [{
+          quantity: discountQuantity,
+          promotionTitle: defaultPromotionTitle,
+          discount: price * rate / 100 * discountQuantity
+        }]
+      }]
     };
     createPromotion(promotion)
       .then(creationResponse => {
-        expectedResponse.fulfilledPromos[0].id = creationResponse.body.promotion.id;
+        expectedResponse.itemDiscounts[0].discounts[0].promotionId = creationResponse.body.promotion.id;
         expectedResponse.almostFulfilledPromos[0].id = creationResponse.body.promotion.id;
         mockProductList(`${productId1},${productId2},${productId3}`, 'categories');
         return evaluatePromotions(cart);
@@ -738,7 +822,7 @@ describe('Calculate cart promotions', () => {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2 } }
             ]
@@ -747,7 +831,8 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -761,22 +846,22 @@ describe('Calculate cart promotions', () => {
         {
           data: [{
             any: [{
-              and: [{
+              all: [{
                 collectedQuantity: cart.items[1].quantity,
-                promoQuantity: promotion.if.any[0].and[1].product.quantity,
-                threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-                value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                promoQuantity: promotion.if.any[0].all[1].product.quantity,
+                threshold: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
+                value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
                 type: 'PRODUCT',
                 code: cart.items[1].productId,
                 items: [
                   { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
                 ]
               }],
-              value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
-              / promotion.if.any[0].and.length
+              value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity
+              / promotion.if.any[0].all.length
             }],
-            value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity
-            / promotion.if.any[0].and.length
+            value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity
+            / promotion.if.any[0].all.length
           }]
         }
       ]
@@ -802,7 +887,7 @@ describe('Calculate cart promotions', () => {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2, threshold: 0.3 } }
             ]
@@ -811,7 +896,8 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -825,11 +911,11 @@ describe('Calculate cart promotions', () => {
         {
           data: [{
             any: [{
-              and: [{
+              all: [{
                 collectedQuantity: cart.items[0].quantity,
-                promoQuantity: promotion.if.any[0].and[0].product.quantity,
-                threshold: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
-                value: cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity,
+                promoQuantity: promotion.if.any[0].all[0].product.quantity,
+                threshold: cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity,
+                value: cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity,
                 type: 'PRODUCT',
                 code: cart.items[0].productId,
                 items: [
@@ -837,22 +923,22 @@ describe('Calculate cart promotions', () => {
                 ]
               }, {
                 collectedQuantity: cart.items[1].quantity,
-                promoQuantity: promotion.if.any[0].and[1].product.quantity,
-                threshold: promotion.if.any[0].and[1].product.threshold,
-                value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                promoQuantity: promotion.if.any[0].all[1].product.quantity,
+                threshold: promotion.if.any[0].all[1].product.threshold,
+                value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
                 type: 'PRODUCT',
                 code: cart.items[1].productId,
                 items: [
                   { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
                 ]
               }],
-              value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-              + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-              / promotion.if.any[0].and.length
+              value: ((cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity)
+              + (cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity))
+              / promotion.if.any[0].all.length
             }],
-            value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-            + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-            / promotion.if.any[0].and.length
+            value: ((cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity)
+            + (cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity))
+            / promotion.if.any[0].all.length
           }]
         }
       ]
@@ -878,7 +964,7 @@ describe('Calculate cart promotions', () => {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2 } }
             ]
@@ -887,7 +973,8 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -937,7 +1024,7 @@ describe('Calculate cart promotions', () => {
       if: {
         any: [
           {
-            and: [
+            all: [
               { product: { id: productId1, quantity: quantity1 } },
               { product: { id: productId2, quantity: quantity2 } }
             ]
@@ -946,7 +1033,8 @@ describe('Calculate cart promotions', () => {
             product: { id: productId3, quantity: quantity3 }
           }
         ]
-      }
+      },
+      then: {}
     };
     const cart = {
       items: [
@@ -962,12 +1050,12 @@ describe('Calculate cart promotions', () => {
             {
               any: [
                 {
-                  and: [
+                  all: [
                     {
                       collectedQuantity: cart.items[0].quantity,
-                      promoQuantity: promotion.if.any[0].and[0].product.quantity,
-                      threshold: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
-                      value: cart.items[1].quantity / promotion.if.any[0].and[0].product.quantity,
+                      promoQuantity: promotion.if.any[0].all[0].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].all[0].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].all[0].product.quantity,
                       type: 'PRODUCT',
                       code: cart.items[0].productId,
                       items: [
@@ -975,18 +1063,18 @@ describe('Calculate cart promotions', () => {
                       ]
                     }, {
                       collectedQuantity: cart.items[1].quantity,
-                      promoQuantity: promotion.if.any[0].and[1].product.quantity,
-                      threshold: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
-                      value: cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity,
+                      promoQuantity: promotion.if.any[0].all[1].product.quantity,
+                      threshold: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
+                      value: cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity,
                       type: 'PRODUCT',
                       code: cart.items[1].productId,
                       items: [
                         { itemId: cart.items[1].id, quantityToUse: cart.items[1].quantity }
                       ]
                     }],
-                  value: ((cart.items[0].quantity / promotion.if.any[0].and[0].product.quantity)
-                  + (cart.items[1].quantity / promotion.if.any[0].and[1].product.quantity))
-                  / promotion.if.any[0].and.length
+                  value: ((cart.items[0].quantity / promotion.if.any[0].all[0].product.quantity)
+                  + (cart.items[1].quantity / promotion.if.any[0].all[1].product.quantity))
+                  / promotion.if.any[0].all.length
                 },
                 {
                   collectedQuantity: cart.items[2].quantity,

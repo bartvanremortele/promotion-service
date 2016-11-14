@@ -19,7 +19,7 @@ Given this promotion:
   "if" : {
     "any" : [
       {
-        "and" : [
+        "all" : [
           {
             "product" : {
               "id" : "SksexGRPn4", 
@@ -93,7 +93,7 @@ the promotion engine will output:
         {
           "any": [
             {
-              "and": [
+              "all": [
                 {
                   "collectedQuantity": 2,
                   "promoQuantity": 5,

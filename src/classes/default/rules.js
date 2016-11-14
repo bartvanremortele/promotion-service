@@ -3,7 +3,7 @@
 /*
 
  if: {
-   and: [
+   all: [
      {any: [
        {product: {id: '0001', quantity: 3}},
        {product: {id: '0002', quantity: 3}},

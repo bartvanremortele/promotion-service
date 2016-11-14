@@ -6,15 +6,16 @@ function factory(/* base */) {
       let collectedQuantity = 0;
       const promoQuantity = promoProduct ? promoProduct.quantity : promoCategory.quantity;
       let threshold = promoProduct ? promoProduct.threshold : promoCategory.threshold;
-      const collectedItems = [];
+
+      // Collect all items available
+      const availableItems = [];
       for (const item of context.cart.items) {
-        // Is this a product the promotion wants?
         let pass = false;
         if (promoProduct && promoProduct.id === item.productId) {
           pass = true;
         }
-        const product = context.products[item.productId];
         if (!pass && promoCategory) {
+          const product = context.products[item.productId];
           for (const categoryId of product.categories) {
             if (product.categoryPaths[categoryId].indexOf(promoCategory.id) !== -1) {
               pass = true;
@@ -22,27 +23,48 @@ function factory(/* base */) {
             }
           }
         }
-        // Is there enough quantity?
         if (pass) {
-          const cartItemQuantityUsed = context.cartContext[item.id]
-            ? context.cartContext[item.id].quantityUsed : 0;
-          const promoItemContext = opContext[item.id] = opContext[item.id]
-            || {
-              quantityUsed: 0,
-              promos: []
-            };
-          const quantityNeeded = promoQuantity - collectedQuantity;
-          const quantityAvailable = item.quantity - cartItemQuantityUsed
-            - promoItemContext.quantityUsed;
-          if (quantityAvailable > 0) {
-            const quantityToUse = quantityAvailable > quantityNeeded
-              ? quantityNeeded : quantityAvailable;
-            collectedQuantity += quantityToUse;
-            collectedItems.push({ promoId: context.promotion.id, itemId: item.id, quantityToUse });
-          }
-          if (collectedQuantity === promoQuantity) break;
+          availableItems.push(item);
         }
       }
+
+      // Sort items if needed
+      if (promoCategory && promoCategory.lowestPrice) {
+        availableItems.sort((a, b) => {
+          if (a.price > b.price) return 1;
+          return -1;
+        });
+      }
+
+      // Collect items
+      let collectedItems = [];
+      for (const item of availableItems) {
+
+        const cartItemQuantityUsed = context.cartContext[item.id]
+          ? context.cartContext[item.id].quantityUsed : 0;
+        const promoItemContext = opContext[item.id] = opContext[item.id]
+          || {
+            quantityUsed: 0,
+            promos: []
+          };
+        const quantityNeeded = promoQuantity - collectedQuantity;
+        const quantityAvailable = item.quantity - cartItemQuantityUsed
+          - promoItemContext.quantityUsed;
+        if (quantityAvailable > 0) {
+          const quantityToUse = quantityAvailable > quantityNeeded
+            ? quantityNeeded : quantityAvailable;
+          collectedQuantity += quantityToUse;
+          collectedItems.push({
+            promoId: context.promotion.id,
+            itemId: item.id,
+            price: item.price,
+            quantityToUse,
+          });
+        }
+
+        if (collectedQuantity === promoQuantity) break;
+      }
+
       // Calculate value
       const value = collectedQuantity === 0 ? 0.00 : collectedQuantity / promoQuantity;
       if (!threshold) threshold = collectedQuantity === 0 ? 1 : (promoQuantity - 1) / promoQuantity;

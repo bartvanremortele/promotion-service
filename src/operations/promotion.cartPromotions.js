@@ -100,6 +100,7 @@ function opFactory(base) {
               discountsClasses[promotion.class]({
                 promotion,
                 cart,
+                products,
                 fulfilledPromos
               });
             });

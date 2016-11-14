@@ -62,10 +62,12 @@ function promotionFn(base) {
       // Copy the Promotion result to the fulfilledPromos to easy the access
       const items = [];
       Object.keys(opContext).forEach(itemId => {
-        items.push({
-          itemId,
-          quantityUsed: opContext[itemId].quantityUsed
-        });
+        if (opContext[itemId].quantityUsed > 0) {
+          items.push({
+            itemId,
+            quantityUsed: opContext[itemId].quantityUsed
+          });
+        }
       });
       context.fulfilledPromos.push({
         id: context.promotion.id,

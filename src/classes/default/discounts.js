@@ -2,9 +2,9 @@
 /*
 
  then: {
-   discounts: [
+   all: [
      { product: {id: '0001', quantity: 1, discount: { rate: 99.99, isPercentage: false }}},
-     { category: {id: 'aaa', quantity: -1, discount: { rate: 10, isPercentage: true }}}
+     { category: {id: 'aaa', quantity: 1, discount: { rate: 10, isPercentage: true }}}
    ]
  }
 
@@ -25,6 +25,7 @@ function promotionFn(base) {
           {
             promotion: context.promotion,
             cart: context.cart,
+            products: context.products,
             ffp
           },
           opContext,

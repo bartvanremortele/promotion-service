@@ -45,8 +45,7 @@ Promotions are evaluated in order depending on their priority value. This is imp
 In every case to qualify for the discount twice you need to have a perfect pair, meaning 1 qualifying and 1 partner 1 discount.
 2 qualifying and 2 partner 2 discounts.
 
-**Qualifying categories: Men Women
-Partner categories: Men Women**
+**Qualifying categories: Men Women - Partner categories: Men Women**
 
 *Case 1*
 
@@ -60,8 +59,7 @@ Cart contains 3 products: 1 Men (10$) 1 women(12$) & 1 women (15$) the discount 
 
 Cart contains 4 products: 1Men 20$ 1 Men (10$) 1 women(12$) & 1 women (15$) the discount will be taken from the 2 lowest price products of the 4, in this case it will be the men (10$) & women (12$)
 
-**Qualifying categories: Men
-Partner categories: Men**
+**Qualifying categories: Men - Partner categories: Men**
 
 *Case 1*
 
@@ -75,8 +73,7 @@ Cart contains 3 products: 1 Men (10$) 1 men(12$) & 1 men (15$) the discount will
 
 Cart contains 4 products: 1 Men 20$ 1 Men (10$) 1 men(12$) & 1 men (15$) the discount will be taken from the 2 lowest price products of the 4, in this case it will be the men (10$) & men (12$)
 
-**Qualifying categories: Men
-Partner categories: Women**
+**Qualifying categories: Men - Partner categories: Women**
 
 *Case 1*
 
@@ -92,3 +89,287 @@ Cart contains 4 products: 1 Men 20$ 1 Men 25$ 1 women(12$) & 1 women (15$) the d
 
 ### Perfect partner percent discount
 The same logic will apply for the perfect partner discount however the discount will come off of the highest price qualifying product.
+
+## Promotion Rules examples
+
+* 1 - Bundle
+
+ie: Buy A, B, and C for €50
+
+_Resolved as fixed price product A plus free products B and C_
+
+```json
+{
+  "if": {
+    "all": [
+      {"product": {
+        "id": "pA",
+        "quantity": 1
+      }},
+      {"product": {
+        "id": "pB",
+        "quantity": 1
+      }},
+      {"product": {
+        "id": "pC",
+        "quantity": 1
+      }}
+    ]
+  },
+  "then": {
+    "all": [
+      {"product": {
+        "id": "pA",
+        "quantity": 1,
+        "discount": {
+          "rate": 50,
+          "isFixedPrice": true
+        }
+      }},
+      {"product": {
+        "id": "pB",
+        "quantity": 1,
+        "discount": {
+          "rate": 100,
+          "isPercentage": true
+        }
+      }},
+      {"product": {
+        "id": "pC",
+        "quantity": 1,
+        "discount": {
+          "rate": 100,
+          "isPercentage": true
+        }
+      }}
+    ]
+  }
+}
+```
+
+* 2 - Buy X get Y free
+
+ie: Buy one get one free.
+
+```json
+{
+  "if": {
+    "category": {
+      "id": "c1",
+      "quantity": 2
+    }
+  },
+  "then": {
+    "category": {
+      "id": "c1",
+      "quantity": 1,
+      "discount": {
+        "rate": 100,
+        "isPercentage": true
+      }
+    }
+  }
+}
+```
+
+* 3 - Fixed price
+
+ie: All shirts €5 each.
+
+```json
+{
+  "if": {
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 1
+    }
+  },
+  "then": {
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 1,
+      "discount": {
+        "rate": 5,
+        "isFixedPrice": true
+      }
+    }
+  }
+}
+```
+
+* 4 - Multi-buy
+
+ie: Buy any 3 shirts for €50.
+
+_Resolved as 1 fixed price shirt plus two free shirts_
+
+```json
+{
+  "if": {
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 3
+    }
+  },
+  "then": {
+    "all": [
+      {"category": {
+        "id": "shirts-cat",
+        "quantity": 1,
+        "discount": {
+          "rate": 50,
+          "isFixedPrice": true
+        }
+      }},
+      {"category": {
+        "id": "shirts-cat",
+        "quantity": 2,
+        "discount": {
+          "rate": 100,
+          "isPercentage": true
+        }
+      }}
+    ]
+  }
+}
+```
+
+* 5 - Stepped multi-buy
+
+N/A
+
+* 6 - Perfect partner
+
+ie: Buy a game for €10 with each games console.
+
+```json
+{
+  "if": {
+    "category": {
+     "id": "consoles-cat",
+     "quantity": 1
+    }
+  },
+  "then": {
+    "category": {
+     "id": "games-cat",
+     "quantity": 1,
+     "discount": {
+       "rate": 10,
+       "isFixedPrice": true
+     }
+    }
+  }
+}
+```
+
+* 7 - One-to-one perfect partner bundle
+
+Buy this game and the selected partner accessory together for €25.00.
+
+_Resolved as fixed price game plus free accesory_
+
+```json
+{
+  "if": {
+    "all": [
+      {"product": {
+        "id": "p001",
+        "quantity": 1
+      }},
+      {"category": {
+        "id": "accessories-cat",
+        "quantity": 1
+      }}
+    ]
+  },
+  "then": {
+    "all": [
+      {"product": {
+        "id": "p001",
+        "quantity": 1,
+        "discount": {
+          "rate": 25,
+          "isFixedPrice": true
+        }
+      }},
+      {"category": {
+        "id": "accessories-cat",
+        "quantity": 1,
+        "discount": {
+          "rate": 100,
+          "isPercentage": true
+        }
+      }}
+    ]
+  }
+}
+```
+
+* 8 - Perfect partner bundle
+
+ie: Buy a games console and 3 accessories for €200.
+
+_Resolved as fixed price game plus free accesories_
+
+```json
+{
+  "if": {
+    "all": [
+      {"product": {
+        "id": "p001",
+        "quantity": 1
+      }},
+      {"category": {
+        "id": "accessories-cat",
+        "quantity": 3
+      }}
+    ]
+  },
+  "then": {
+    "all": [
+      {"product": {
+        "id": "p001",
+        "quantity": 1,
+        "discount": {
+          "rate": 200,
+          "isFixedPrice": true
+        }
+      }},
+      {"category": {
+        "id": "accessories-cat",
+        "quantity": 3,
+        "discount": {
+          "rate": 100,
+          "isPercentage": true
+        }
+      }}
+    ]
+  }
+}
+```
+
+* 9 - Percentage discount
+
+ie: 20% off all cameras.
+
+```json
+{
+  "if": {
+   "category": {
+     "id": "cameras-cat",
+     "quantity": 1
+   }
+  },
+  "then": {
+   "category": {
+     "id": "cameras-cat",
+     "quantity": 1,
+     "discount": {
+       "rate": 20,
+       "isPercentaje": true
+     }
+   }
+  }
+}
+```

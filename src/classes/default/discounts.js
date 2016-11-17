@@ -3,8 +3,22 @@
 
  then: {
    all: [
-     { product: {id: '0001', quantity: 1, discount: { rate: 99.99, isPercentage: false }}},
-     { category: {id: 'aaa', quantity: 1, discount: { rate: 10, isPercentage: true }}}
+     { product: {
+       id: '0001',
+       quantity: 1,
+       discount: {
+         rate: 99.99,
+         isPercentage: false
+       }
+      }},
+     { category: {
+       id: 'aaa',
+       quantity: 1,
+       discount: {
+         rate: 10,
+         isFixedPrice: true
+       }
+     }}
    ]
  }
 

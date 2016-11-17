@@ -2,6 +2,24 @@
  Product & Category discounts
  */
 function factory(/* base */) {
+
+  function calculateDiscount(item, quantity, discount) {
+
+    if (discount.isPercentage) {
+      // Discount a percentage
+      // ie: price=100$, rate=10, discount=10$, discountedPrice=90$
+      return Math.round(item.price * quantity * discount.rate / 100);
+    }
+    if (discount.isFixedPrice) {
+      // The final price should be a fixed amount
+      // ie: price=100$, rate=25, discount=75$, discountedPrice=25$
+      return item.price * quantity - discount.rate * quantity;
+    }
+    // Discounts a fixed amount of money
+    // ie: price=100$, rate=5, discount=5$, discountedPrice=95$
+    return discount.rate * quantity;
+  }
+
   return {
     alias: ['category'],
     fn: (context, opContext, level, { product: discountProduct, category: discountCategory }, evaluator) => {
@@ -31,9 +49,7 @@ function factory(/* base */) {
               ? cartItem.quantity
               : quantityMissing;
             quantityDiscounted += quantityAvailable;
-            const discount = discountToDiscount.isPercentage
-              ? Math.round(cartItem.price * quantityAvailable * discountToDiscount.rate / 100)
-              : discountToDiscount.rate * quantityAvailable;
+            const discount = calculateDiscount(cartItem, quantityAvailable, discountToDiscount);
             promoItem.quantityApplied = (promoItem.quantityApplied || 0) + quantityAvailable;
             cartItem.discountedItems = (cartItem.discountedItems || 0) + quantityAvailable;
             cartItem.discountedTotal = (cartItem.discountedTotal || 0) + discount;

@@ -29,7 +29,7 @@ Order promotions triggers depend on the state of the cart or order at any given 
  1 | Order threshold fixed discount | A fixed value discount is applied to the order when the threshold order value is exceeded. | Spend over €50 to receive a €3 discount.
  2 | Order threshold perfect partner | Purchase a certain product from within a defined set for a fixed price when the threshold order value is exceeded. | Spend over €50 to get any shirt for €5.
  3 | Order threshold free gift   | A free gift is added to the order when the threshold order value is exceeded. | Spend over €50 to receive a free t-shirt.
- 4 | Order threshold free voucher | A free voucher is given out when the order reaches a certain value. | Get a free €5 voucher when you spend over €150.00. Get a free voucher when your order subtotal is at least the threshold value
+ 4 | Order threshold free voucher | A free voucher is given out when the order reaches a certain value. | Get a free €5 voucher when you spend over €150.00.
  5 | Order threshold change delivery mode | A different delivery mode is applied to the order when the threshold order value is exceeded. | Spend over €10 to get free shipping
 
 ## Promotion triggers evaluation
@@ -91,6 +91,8 @@ Cart contains 4 products: 1 Men 20$ 1 Men 25$ 1 women(12$) & 1 women (15$) the d
 The same logic will apply for the perfect partner discount however the discount will come off of the highest price qualifying product.
 
 ## Promotion Rules examples
+
+### Product Promotions
 
 * 1 - Bundle
 
@@ -373,3 +375,75 @@ ie: 20% off all cameras.
   }
 }
 ```
+
+### Order Promotions
+
+* 1 - Order threshold fixed discount
+
+ie: Spend over €50 to receive a €3 discount.
+
+N/A
+
+* 2 - Order threshold perfect partner
+
+ie: Spend over €50 to get any shirt (up to 99) for €5.
+
+```json
+{
+  "if": {
+    "subtotal": 50
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 1
+    }
+  },
+  "then": {
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 99,
+      "discount": {
+        "rate": 5,
+        "isFixedPrice": true
+      }
+    }
+  }
+}
+```
+
+* 3 - Order threshold free gift
+
+ie: Spend over €50 to receive a free t-shirt.
+
+```json
+{
+  "if": {
+    "subtotal": 50,
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 1
+    }
+  },
+  "then": {
+    "category": {
+      "id": "shirts-cat",
+      "quantity": 1,
+      "discount": {
+        "rate": 100,
+        "isPercentaje": true
+      }
+    }
+  }
+}
+```
+
+* 4 - Order threshold free voucher
+
+ie: Get a free €5 voucher when you spend over €150.00.
+
+N/A
+
+* 5 - Order threshold change delivery mode
+
+ie: Spend over €10 to get free shipping
+
+N/A

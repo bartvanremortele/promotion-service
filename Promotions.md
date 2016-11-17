@@ -391,7 +391,7 @@ ie: Spend over €50 to get any shirt (up to 99) for €5.
 ```json
 {
   "if": {
-    "subtotal": 50
+    "subtotal": 50,
     "category": {
       "id": "shirts-cat",
       "quantity": 1

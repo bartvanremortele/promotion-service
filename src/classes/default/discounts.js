@@ -35,7 +35,7 @@ function promotionFn(base) {
     context.fulfilledPromos.forEach(ffp => {
       if (ffp.id === context.promotion.id) {
         const opContext = {};
-        const result = discountsEvaluator.evaluate(
+        discountsEvaluator.evaluate(
           {
             promotion: context.promotion,
             cart: context.cart,

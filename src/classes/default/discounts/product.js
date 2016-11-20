@@ -3,21 +3,21 @@
  */
 function factory(/* base */) {
 
-  function calculateDiscount(item, quantity, discount) {
+  function calculateDiscount(item, discount) {
 
     if (discount.isPercentage) {
       // Discount a percentage
       // ie: price=100$, rate=10, discount=10$, discountedPrice=90$
-      return Math.round(item.price * quantity * discount.rate / 100);
+      return item.price * discount.rate / 100;
     }
     if (discount.isFixedPrice) {
       // The final price should be a fixed amount
       // ie: price=100$, rate=25, discount=75$, discountedPrice=25$
-      return item.price * quantity - discount.rate * quantity;
+      return item.price - discount.rate;
     }
     // Discounts a fixed amount of money
     // ie: price=100$, rate=5, discount=5$, discountedPrice=95$
-    return discount.rate * quantity;
+    return discount.rate;
   }
 
   return {
@@ -49,7 +49,7 @@ function factory(/* base */) {
               ? cartItem.quantity
               : quantityMissing;
             quantityDiscounted += quantityAvailable;
-            const discount = calculateDiscount(cartItem, quantityAvailable, discountToDiscount);
+            const discount = calculateDiscount(cartItem, discountToDiscount);
             promoItem.quantityApplied = (promoItem.quantityApplied || 0) + quantityAvailable;
             cartItem.discountedItems = (cartItem.discountedItems || 0) + quantityAvailable;
             cartItem.discountedTotal = (cartItem.discountedTotal || 0) + discount;
@@ -58,6 +58,7 @@ function factory(/* base */) {
               promotionId: context.promotion.id,
               promotionTitle: context.promotion.title,
               quantity: quantityAvailable,
+              price: cartItem.price,
               discount
             });
           }

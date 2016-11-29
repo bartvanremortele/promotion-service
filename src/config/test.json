@@ -10,7 +10,7 @@
     "defaultTransports": [
       "http"
     ],
-    "defaultCallTransport": "http"
+    "defaultOutTransport": "http"
   },
   "db": {
     "host": "mongo",

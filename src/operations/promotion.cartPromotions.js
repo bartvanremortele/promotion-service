@@ -65,8 +65,11 @@ function opFactory(base) {
               fields: 'categories',
               categoryPaths: true
             })
-            .then(productsList => {
-              return productsList.data.reduce((result, item) => {
+            .then(result => {
+              if (result.ok === false) {
+                throw new Error(result.error);
+              }
+              return result.data.reduce((result, item) => {
                 result[item.id] = item;
                 return result;
               }, {});

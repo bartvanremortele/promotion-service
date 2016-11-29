@@ -53,6 +53,7 @@ function opFactory(base) {
         list.push(item.productId);
         return list;
       }, []))];
+
       return Promise
         .resolve(productIds)
         .then(() => {
@@ -64,16 +65,16 @@ function opFactory(base) {
               id: productIds.join(','),
               fields: 'categories',
               categoryPaths: true
-            })
-            .then(result => {
-              if (result.ok === false) {
-                throw new Error(result.error);
-              }
-              return result.data.reduce((result, item) => {
-                result[item.id] = item;
-                return result;
-              }, {});
             });
+        })
+        .then(response => {
+          if (response.ok === false) {
+            throw new Error(response.error);
+          }
+          return response.data.reduce((result, item) => {
+            result[item.id] = item;
+            return result;
+          }, {});
         })
         .then(products => {
           const cartContext = {};

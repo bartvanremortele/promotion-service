@@ -29,7 +29,7 @@ function factory(/* base */) {
       }
 
       // Sort items if needed
-      if (promoCategory && promoCategory.lowestPrice) {
+      if (promoCategory && promoCategory.lowestPrice === true) {
         availableItems.sort((a, b) => {
           if (a.price > b.price) return 1;
           return -1;

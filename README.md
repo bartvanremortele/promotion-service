@@ -95,4 +95,4 @@ The same logic will apply for the perfect partner discount however the discount 
 
 ## Examples
 
-In the [examples page](/Examples.md) there is a compilation of rules and discounts for each of the promotions types mentioned in thei page.
+In the [examples page](./Examples.md) there is a compilation of rules and discounts for each of the promotions types mentioned in thei page.

@@ -1,16 +1,20 @@
 {
+  "services": {
+    "defaultTransports": [
+      "http"
+    ],
+    "defaultOutTransport": "http"
+  },
+  "transports": {
+    "http": {
+      "port": "4000"
+    }
+  },
   "logger": {
     "level": "info",
     "server": {
       "response": "debug"
     }
-  },
-  "services": {
-    "port": "5050",
-    "defaultTransports": [
-      "http"
-    ],
-    "defaultOutTransport": "http"
   },
   "db": {
     "host": "mongo",

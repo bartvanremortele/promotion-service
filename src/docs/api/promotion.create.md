@@ -186,7 +186,7 @@ id        | yes | String  | SksexGRPn4 | The Product ID.
 quantity  | yes | Number  | 1 | The quantity of products to be discounted.
 discount  | yes | JSON    | { rate: 10, isPercentage: true } | The discount to be applied
 
-### The `discount` object
+#### The "discount" object
 
 Field | Required | Type | Example | Description
 ------|----------|------|---------|------------

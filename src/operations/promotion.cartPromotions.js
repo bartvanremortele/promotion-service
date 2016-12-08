@@ -36,12 +36,12 @@ function opFactory(base) {
   // Preload rules classes
   const rulesClasses = {};
   Object.keys(classesLocation).forEach(key => {
-    rulesClasses[key] = base.utils.loadModule(`promotions:classes:${key}:rules`);
+    rulesClasses[key] = base.utils.loadModule(`promotions:classes:${key}:rules`).module;
   });
   // Preload discounts classes
   const discountsClasses = {};
   Object.keys(classesLocation).forEach(key => {
-    discountsClasses[key] = base.utils.loadModule(`promotions:classes:${key}:discounts`);
+    discountsClasses[key] = base.utils.loadModule(`promotions:classes:${key}:discounts`).module;
   });
 
   const op = {
@@ -69,7 +69,7 @@ function opFactory(base) {
         })
         .then(response => {
           if (response.ok === false) {
-            throw new Error(response.error);
+            throw base.utils.Error(response.error, response.data, true);
           }
           return response.data.reduce((result, item) => {
             result[item.id] = item;

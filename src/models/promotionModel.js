@@ -1,7 +1,8 @@
 const shortId = require('shortid');
 
-function modelFactory(base) {
-  if (base.logger.isDebugEnabled()) base.logger.debug('[db] registering model Promotion');
+function modelFactory(base, configKeys) {
+  const modelName = configKeys[configKeys.length - 1];
+  if (base.logger.isDebugEnabled()) base.logger.debug(`[db] registering model '${modelName}'`);
 
   // The root schema
   const schema = base.db.Schema({
@@ -33,7 +34,7 @@ function modelFactory(base) {
     return obj;
   });
 
-  const model = base.db.model('Promotion', schema);
+  const model = base.db.model(modelName, schema);
 
   // Add the model to mongoose
   return model;

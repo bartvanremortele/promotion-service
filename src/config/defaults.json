@@ -5,7 +5,7 @@
     "style": "RPC"
   },
   "models": {
-    "promotionModel": "./models/promotionModel"
+    "Promotion": "./models/promotionModel"
   },
   "promotions": {
     "classes": {

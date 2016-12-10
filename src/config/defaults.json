@@ -21,7 +21,7 @@
         "product": "./classes/default/rules/product.js",
         "subtotal": "./classes/default/rules/subtotal.js",
         "period": "./classes/default/rules/period.js",
-        "userType": "./classes/default/rules/userType.js"
+        "customerType": "./classes/default/rules/customerType.js"
       },
       "discounts": {
         "all": "./classes/default/discounts/all.js",

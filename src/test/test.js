@@ -206,7 +206,8 @@ describe('Calculate cart promotions', () => {
         discounts: [{
           quantity: discountQuantity,
           promotionTitle: defaultPromotionTitle,
-          discount: price * rate / 100 * discountQuantity
+          discount: price * rate / 100 * discountQuantity,
+          price
         }]
       }]
     };
@@ -256,7 +257,8 @@ describe('Calculate cart promotions', () => {
         discounts: [{
           quantity: discountQuantity,
           promotionTitle: defaultPromotionTitle,
-          discount: price * rate / 100 * discountQuantity
+          discount: price * rate / 100 * discountQuantity,
+          price
         }]
       }]
     };
@@ -483,7 +485,8 @@ describe('Calculate cart promotions', () => {
         discounts: [{
           quantity: discountQuantity,
           promotionTitle: defaultPromotionTitle,
-          discount: price * rate / 100 * discountQuantity
+          discount: price * rate / 100 * discountQuantity,
+          price
         }]
       }]
     };
@@ -677,7 +680,8 @@ describe('Calculate cart promotions', () => {
         discounts: [{
           quantity: discountQuantity,
           promotionTitle: defaultPromotionTitle,
-          discount: price * rate / 100 * discountQuantity
+          discount: price * rate / 100 * discountQuantity,
+          price
         }]
       }],
       almostFulfilledPromos: [
@@ -796,7 +800,8 @@ describe('Calculate cart promotions', () => {
         discounts: [{
           quantity: discountQuantity,
           promotionTitle: defaultPromotionTitle,
-          discount: price * rate / 100 * discountQuantity
+          discount: price * rate / 100 * discountQuantity,
+          price
         }]
       }]
     };

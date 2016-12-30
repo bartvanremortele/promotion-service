@@ -1,7 +1,7 @@
 const Code = require('code');
 const Lab = require('lab');
 const nock = require('nock');
-const request = require('supertest-as-promised');
+const request = require('supertest');
 
 // shortcuts
 const lab = exports.lab = Lab.script();

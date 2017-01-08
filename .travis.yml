@@ -18,6 +18,10 @@ before_install:
   - echo "deb http://dl.yarnpkg.com/debian/ stable main" | sudo tee /etc/apt/sources.list.d/yarn.list
   - sudo apt-get update -qq
   - sudo apt-get install -y -qq yarn
+env:
+  global:
+    - ISDEPLOY=$(echo ${TRAVIS_BRANCH} | grep -q "^.*/.*$" && echo true || echo false)
+    - DEPLOY_NAME=$(echo ${TRAVIS_BRANCH} | sed s/deploy\\///)
 install:
   - cd src
   - yarn --pure-lockfile
@@ -28,9 +32,22 @@ script:
 after_success:
   - cat ./lcov.info | ./node_modules/.bin/coveralls
   - cd ..
-  - docker build -t $TRAVIS_REPO_SLUG:latest .
+  - docker build -t $TRAVIS_REPO_SLUG:build .
   - docker login -u="$DOCKER_USERNAME" -p="$DOCKER_PASSWORD";
-  - docker push $TRAVIS_REPO_SLUG:latest;
+  - if [ "$TRAVIS_BRANCH" == "develop" ]; then
+    docker tag $TRAVIS_REPO_SLUG:build $TRAVIS_REPO_SLUG:develop;
+    docker push $TRAVIS_REPO_SLUG:develop;
+    fi
+  - if [ "$TRAVIS_BRANCH" == "master" ] && [ -n "${TRAVIS_TAG}" ]; then
+    docker tag $TRAVIS_REPO_SLUG:build $TRAVIS_REPO_SLUG:$TRAVIS_TAG;
+    docker push $TRAVIS_REPO_SLUG:$TRAVIS_TAG;
+    docker tag $TRAVIS_REPO_SLUG:build $TRAVIS_REPO_SLUG:latest;
+    docker push $TRAVIS_REPO_SLUG:latest;
+    fi
+  - if [ "$ISDEPLOY" == "true" ]; then
+    docker tag $TRAVIS_REPO_SLUG:build $TRAVIS_REPO_SLUG:$DEPLOY_NAME;
+    docker push $TRAVIS_REPO_SLUG:$DEPLOY_NAME;
+    fi
 notifications:
   slack:
     secure: RahHkb0bYupdxYyoHW4fH2viNYhTZF6bvABG/jnXWqctShk+ficS3EpXc+slu8iw16ogjplo+ExsP9uj2koUxpdZnN9o6v7AAmXUheTgWQMFxwOKP+1gsl81IOLakGCPa+IVGnFTlSDOQpvUJKf5bVfXsaB+D2VAx3JhA8lowgPlPBbNJOqu9y9FpKqnBwmPzZSP/h8knjGtAajgttLMyS3k5B3ndYqJGxZEce/tfT6Oo3G+uTwaU0gYDhs/zXN+ZgzELM11gxkPOqEdYkn1RKhz39JHDmVUm7A/qkduzA1U6jy8KtEDC/2PFj5MLeTqrqb4I4G4Zzxiraz5D5JGHUifVTeTyqr1EIlDxiHnX+4C7cp27OWZoyTSJBN/Ni40Qxh7pWUE9NgqGGIFqI+HFtpF7LLvRRFlCnGDlr7US4PQyxoVpFQCqG+MDXQKOxb0hpxMRpFRXYxkK20en4QjgLXuTjN6ZwtC/IxNurMuvDBQ7QR954UqEd/vaunKL7hwZN3r64RCgGEIsVCt611Txm6Mt/VECOX5j0ipEgxfV4zuzJmEGcKu5cmlfgAfWt7wqCIZfxJ8+sTUUUlhCXRnxW9xWKK1LY5YuIcQusQEPfZMJ8f+FQ2ZvipUaCGvW9nxx2qR7dJJ6678jHUZKLh3eOvy7R5+LPy8dRy/b11+dNk=

@@ -7,6 +7,9 @@
  * @return {Function} The operation factory
  */
 function opFactory(base) {
+
+  const productListURI = base.config.get('services:uris:product.list');
+
   // Preload promotions
   let promotions;
 
@@ -60,7 +63,7 @@ function opFactory(base) {
           // Preload products
           return base.services
             .call({
-              name: 'catalog:product.list'
+              name: productListURI
             }, {
               id: productIds.join(','),
               fields: 'categories',

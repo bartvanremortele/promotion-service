@@ -8,7 +8,7 @@
     }
   },
   "models": {
-    "Promotion": "./models/promotionModel"
+    "Promotion": "${servicePath}/models/promotionModel"
   },
   "promotions": {
     "classes": {

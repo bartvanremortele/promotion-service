@@ -7,13 +7,13 @@
       "port": "3004"
     }
   },
-  "gateway": {
-    "gatewayUrlOverrride": "./config/gatewayUrlOverride"
-  },
   "db": {
     "host": "localhost",
     "db": "micro",
     "debug": true
+  },
+  "gateway": {
+    "gatewayUrlOverrride": "${servicePath}/config/gatewayUrlOverride"
   }
 }
 

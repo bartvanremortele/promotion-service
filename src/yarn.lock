@@ -1541,8 +1541,8 @@ methods@^1.1.1, methods@~1.1.2, methods@1.x:
   resolved "https://registry.yarnpkg.com/methods/-/methods-1.1.2.tgz#5529a4d67654134edcc5266656835b0f851afcee"
 
 microbase:
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/microbase/-/microbase-0.11.1.tgz#5089bec82f0175e9cb206e858217a3b0860730cb"
+  version "0.11.2"
+  resolved "https://registry.yarnpkg.com/microbase/-/microbase-0.11.2.tgz#3e402c850838a8d3c403e2474d924e6c01f0795a"
   dependencies:
     ajv "^4.7.7"
     amq "^0.4.8"

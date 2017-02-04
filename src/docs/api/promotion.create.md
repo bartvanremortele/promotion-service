@@ -9,7 +9,6 @@ follows the [MicroBase API calling conventions](../calling-conventions.html).
 
 Argument | Required | Type | Example | Description
 ---------|----------|------|---------|------------
-token    | yes | Token   | Bearer xxxxx... | Authentication token.
 title    | yes | String  | 3 at 10€ Promotion | Promotion title.
 class    | yes | String  | default | Implementation class. 'default' is the one provided by microbase.
 active   | yes | Boolean | true | Active or disabled.

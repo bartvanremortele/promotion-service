@@ -9,7 +9,6 @@ follows the [MicroBase API calling conventions](../calling-conventions.html).
 
 Argument | Required | Type | Example | Description
 ---------|----------|------|---------|------------
-token  | yes | Token       | Bearer xxxxx... | Authentication token.
 cartId | yes | String      | default         | Identifier to be used as a reference.
 items  | yes | Object List | -               | The list of entries in the Cart.
 

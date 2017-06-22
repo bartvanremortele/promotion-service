@@ -14,7 +14,7 @@
     "debug": true
   },
   "gateway": {
-    "gatewayUrlOverrride": "${servicePath}/config/gatewayUrlOverride"
+    "gatewayUrlOverride": "${servicePath}/config/gatewayUrlOverride"
   }
 }
 

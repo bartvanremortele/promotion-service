@@ -7,7 +7,7 @@
   },
   "transports": {
     "http": {
-      "port": "4000"
+      "port": "4004"
     }
   },
   "logger": {
@@ -28,7 +28,7 @@
   },
   "test": {
     "defaultHeaders": {
-      "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21pY3JvYmFzZS5pbyIsInN1YiI6InVzZXIiLCJzY29wZSI6ImFwaSIsImp0aSI6ImZmYjVhOTQxLTQwYWMtNDBjNy1iMDNiLWIzZjdiMTdlOGRlMCIsImlhdCI6MTQ2NDYwNzU1MCwiZXhwIjoxNDk2MTQzNTUwfQ.kgFdYAGjwLC7wrY2gcm-8swDzwSCuEwLhgSx10rKZew"
+      "Authorization": "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwczovL21pY3JvYmFzZS5pbyIsInN1YiI6ImNsaWVudC9pbnRlcm5hbCIsInNjb3BlIjpbIklOVEVSTkFMIl0sImp0aSI6IjgyM2Y1MjY2LWEzYjEtNDkzNi1hMDk4LTc1Y2EzYzJlMmZmZSIsImlhdCI6MTQ5ODIwNTUwMX0.z3z2U_xTSSkLbB2e6WqV7ipidvGny7x6bZVm-mxMbU4"
     }
   },
   "bus": {
@@ -43,7 +43,8 @@
         "engine": "local"
       }
     }
-  }
+  },
+  "revokedListActive": false
 }
 
 
